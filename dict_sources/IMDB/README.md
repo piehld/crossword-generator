@@ -1,13 +1,11 @@
-You can currently download the data files in tab-separated-value format from:
-http://www.imdb.com/interfaces/
-(please read the official guidance and licencing)
-which when unpacked will give you:
+Data files can be downloaded here (in TSV): http://www.imdb.com/interfaces/
+(Subject to the specified licensing terms.)
 
-name.basics.tsv
-title.akas.tsv
-title.basics.tsv
-title.crew.tsv
-title.episode.tsv
-title.principals.tsv
-title.ratings.tsv
-
+This will expand into the following set of files:
+ - name.basics.tsv
+ - title.akas.tsv
+ - title.basics.tsv
+ - title.crew.tsv
+ - title.episode.tsv
+ - title.principals.tsv
+ - title.ratings.tsv

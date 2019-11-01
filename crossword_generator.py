@@ -21,7 +21,8 @@ def main():
 	print('\n\n')
 	print(xw_puzzle.empty_grid)
 
-	nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
+	# nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
+	nyt_words = {3:{'aaa':'test'}, 4:{'aaaa':'test'}, 5:{'aaaaa':'test'}}
 
 	xw_puzzle.fill_grid(nyt_words)
 
@@ -52,6 +53,7 @@ class CrosswordPuzzle:
 		self.num_blk_sqs = round(self.num_squares * self.density) # If odd, center square must be made black; if even, no need.
 		if self.num_blk_sqs % 2 != 0: # [FOR TESTING PURPOSES] If odd number of black squares, make it even so puzzle can easily be made symmetrical (wihtout having to make center square black)
 			self.num_blk_sqs -= 1
+		self.blk_sqs_positions = None
 		self.empty_grid = None
 		self.filled_grid = None
 
@@ -67,7 +69,9 @@ class CrosswordPuzzle:
 		For testing purposes, will start with simple 5x5 grid with four corners set as black squares.
 		"""
 
-		G = np.empty(self.dims, dtype=np.string_)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D)
+		# G = np.empty(self.dims, dtype=np.string_)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D)
+		G = np.empty(self.dims, dtype=str)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D); Also, if you use "np.string_" this actually makes it an array of "bytes"...?!
+
 		# G[:] = ''	# Set all initialized cells to empty
 		G[:] = '_'	# Set all initialized cells to '_' so that columns line up on stdout (i.e., instead of setting them to empty '')
 
@@ -79,12 +83,13 @@ class CrosswordPuzzle:
 			rand_pos = (rand[0,0], rand[0,1])
 
 		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
-		G[0][0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
+		G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
 
+		self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
 
 		self.empty_grid = copy.deepcopy(G)
 
-		return self.empty_grid
+		return self.empty_grid, self.blk_sqs_positions
 
 	def is_empty_grid_valid(self):
 		"""
@@ -101,11 +106,21 @@ class CrosswordPuzzle:
 		:param words: Word corpus (in dict. format) to use to fill grid.
 		"""
 
-		grid_build = copy.deepcopy(self.empty_grid)
+		print("Here")
+
+		G = copy.deepcopy(self.empty_grid)
+		print(G)
 
 		# First get list of all accross and down empty cell stretches (with length)
 			# Will likely need sub method to update this list once letters start getting put in the grid, to re-run each time a new letter is inserted.
+		across, down = {}, {}
+		for bs in self.blk_sqs_positions:
+			# Get the spans of cells between each of them, row and column wise...and then append to the corresponding dicts
+			print(bs)
 
+			continue
+
+			# word_join = np.str.join('',G2[0][0:5])	# command to join cells from 0,0 to 0,5; will be useful later...maybe.
 
 
 		return self.filled_grid
@@ -139,7 +154,7 @@ def read_nyt_corpus(file, dims):
 					# print(answer_len, answer, clue)
 					clue_answer_dict[answer_len][answer].append(clue)
 
-	print(clue_answer_dict[3].keys())
+	# print(clue_answer_dict[3].keys())
 
 	return clue_answer_dict
 
