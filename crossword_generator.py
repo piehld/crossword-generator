@@ -6,7 +6,7 @@ import numpy as np
 # import matplotlib.pyplot as plt
 import copy
 from ast import literal_eval
-
+from random import choice
 
 def main():
 
@@ -48,18 +48,47 @@ class CrosswordPuzzle:
 		self.dims = dims
 		self.rows = dims[0]
 		self.cols = dims[1]
+		self.ifcenter_black = False # Patrick: I add a new parameter to determine if the center is black
 		self.density = density	# Should add a check to make sure the density is low enough that a "valid puzzle" is still possible (i.e., that no two-letter words are present, etc.)
 		self.num_squares = dims[0]*dims[1]
 		self.num_blk_sqs = round(self.num_squares * self.density) # If odd, center square must be made black; if even, no need.
 		if self.num_blk_sqs % 2 != 0: # [FOR TESTING PURPOSES] If odd number of black squares, make it even so puzzle can easily be made symmetrical (wihtout having to make center square black)
 			self.num_blk_sqs -= 1
+			self.ifcenter_black = True
+
 		self.blk_sqs_positions = None
 		self.empty_grid = None
 		self.filled_grid = None
 
 		## Call main methods upon initialization
+
 		self.make_empty_grid()
+		self.empty_grid = self.determine_black_square(self.empty_grid)
 		# self.fill_grid()
+
+	def determine_black_square(self,G):
+		center = int(self.rows/2)
+		if self.ifcenter_black == True:
+			G[center][center] = '.'
+
+		rand_nums,rand_pool = int(self.num_blk_sqs / 2), [i for i in range(0,int((self.num_squares - 1) / 2))]
+		self.blk_sqs_positions = []
+		while(rand_nums > 0):
+			rand_nums -= 1
+			temp = choice(rand_pool)
+			rand_pool.remove(temp)
+			self.blk_sqs_positions.append((int(temp/self.cols),temp % self.rows))
+			G[int(temp/self.cols)][temp % self.rows] = '.'
+			self.blk_sqs_positions.append((center * 2 - int(temp/self.cols),center * 2 - temp % self.rows))  # make the board symmetric
+			G[center * 2 - int(temp/self.cols)][center * 2 - (temp % self.rows)] = '.'
+
+		return G
+
+
+
+
+
+
 
 
 	def make_empty_grid(self):
@@ -83,9 +112,9 @@ class CrosswordPuzzle:
 			rand_pos = (rand[0,0], rand[0,1])
 
 		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
-		G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
+		#G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
 
-		self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
+		#self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
 
 		self.empty_grid = copy.deepcopy(G)
 
