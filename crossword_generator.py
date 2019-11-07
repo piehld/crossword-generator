@@ -21,8 +21,8 @@ def main():
 	print('\n\n')
 	print(xw_puzzle.empty_grid)
 
-	nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
-	# nyt_words = {3:{'aaa':'test'}, 4:{'aaaa':'test'}, 5:{'aaaaa':'test'}}
+	# nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
+	nyt_words = {3:{'aaa':'test'}, 4:{'aaaa':'test'}, 5:{'aaaaa':'test'}}
 
 	xw_puzzle.fill_grid(nyt_words)
 
@@ -155,23 +155,69 @@ class CrosswordPuzzle:
 		G = copy.deepcopy(self.empty_grid)
 		print(G)
 
-		# First get list of all accross and down empty cell stretches (with length)
+		# First get list of all across and down empty cell stretches (with length)
 			# Will likely need sub method to update this list once letters start getting put in the grid, to re-run each time a new letter is inserted.
 		across, down = {}, {}
-		rows_with_words = []
-		cols_with_words = []
-		for bs in self.blk_sqs_positions:
-			# Get the spans of cells between each of them, row and column wise...and then append to the corresponding dicts
-			if bs[0] not in rows_with_words:
-				rows_with_words.append(bs[0])
-			if bs[1] not in rows_with_words:
-				rows_with_words.append(bs[1])
-			print(bs)
+		checked_down_squares = []
 
-			continue
+		# Gather down words FIRST (since that's how numbering is ordered)
+		clue_enum = 0
+		for r in range(self.rows):
+			on_blank_across_squares = False
+			for c in range(self.cols):
+				on_blank_down_squares = False
+				if (r,c) not in self.blk_sqs_positions:
 
-		print(rows_with_words)
-		print(cols_with_words)
+					# Swap Column block up here? For ordering of numbers?
+					if on_blank_across_squares == True:
+						if c == self.cols-1:	# if at end of row
+							across[curr_across_num].update( {"end":(r,c)} )
+
+					elif on_blank_across_squares == False:
+						on_blank_across_squares = True
+						clue_enum += 1
+						across.update( {clue_enum: {"start":(r,c)}} )
+						curr_across_num = clue_enum
+
+					if on_blank_down_squares == False and (r,c) not in checked_down_squares:
+						# Now proceed through the column dimension first
+
+						# If down word doesn't start at same square as across word, increment the clue number
+						if (r,c) != across[curr_across_num]["start"]:
+							clue_enum += 1
+
+						down.update( {clue_enum: {"start":(r,c)}} )
+						on_blank_down_squares = True
+						checked_down_squares.append((r,c))
+						r2 = r
+						while on_blank_down_squares:
+							r2+=1
+							if (r2,c) in self.blk_sqs_positions:
+								down[clue_enum].update( {"end":(r2-1,c)} )
+								on_blank_down_squares = False
+
+							elif (r2,c) not in self.blk_sqs_positions:
+								checked_down_squares.append((r2,c))
+								if r2 == self.rows-1:	# if at end of column
+									down[clue_enum].update( {"end":(r2,c)} )
+									on_blank_down_squares = False
+								else:
+									continue
+
+				elif (r,c) in self.blk_sqs_positions:
+					if on_blank_across_squares == True:	# Then end the word
+						across[curr_across_num].update( {"end":(r,c-1)} )
+						on_blank_across_squares = False
+					elif on_blank_across_squares == False:
+						continue
+
+
+		print("Across",across)
+		print("Down",down)
+		# print(G)
+		# exit()
+
+		# Get the spans of cells between each of them, row and column wise...and then append to the corresponding dicts
 
 			# word_join = np.str.join('',G2[0][0:5])	# command to join cells from 0,0 to 0,5; will be useful later...maybe.
 
