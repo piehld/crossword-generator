@@ -21,8 +21,8 @@ def main():
 	print('\n\n')
 	print(xw_puzzle.empty_grid)
 
-	# nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
-	nyt_words = {3:{'aaa':'test'}, 4:{'aaaa':'test'}, 5:{'aaaaa':'test'}}
+	nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
+	# nyt_words = {3:{'aaa':'test'}, 4:{'aaaa':'test'}, 5:{'aaaaa':'test'}}
 
 	xw_puzzle.fill_grid(nyt_words)
 
@@ -33,6 +33,15 @@ def main():
 class CrosswordPuzzle:
 	"""
 	Crossword Puzzle class for representing a full (unfilled or filled) crossword puzzle grid.
+
+	Currently must be Odd x Odd length
+
+	Rules followed:
+		- All words must be >= 3 characters
+		- All white spaces should be connected (no enclosed/blocked-off regions)
+			* Using union-find algorithm to check this
+		- All white squares must be part of BOTH an Across and Down crossing
+			* There must be at least 1 white square to the left or right, AND at least 1 white sqauare to the top or bottom
 	"""
 
 	def __init__(self, dims: tuple, density: float):
@@ -63,7 +72,8 @@ class CrosswordPuzzle:
 		## Call main methods upon initialization
 
 		self.make_empty_grid()
-		self.empty_grid = self.determine_black_square(self.empty_grid)
+		# self.empty_grid = self.determine_black_square(self.empty_grid)
+
 		# self.fill_grid()
 
 	def determine_black_square(self,G):
@@ -112,9 +122,9 @@ class CrosswordPuzzle:
 			rand_pos = (rand[0,0], rand[0,1])
 
 		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
-		#G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
+		G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
 
-		#self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
+		self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
 
 		self.empty_grid = copy.deepcopy(G)
 
@@ -132,6 +142,11 @@ class CrosswordPuzzle:
 		"""
 		Method to fill the grid.
 
+		When assigning words to white-square stretches, can use: np[0][0:4] = "LAIR" (or similar, where 4 is the 'end' of the word)
+
+		Fill LONGER words first, then crossings to the longer words
+		ALSO Choose most common words first (or rank them all)
+
 		:param words: Word corpus (in dict. format) to use to fill grid.
 		"""
 
@@ -143,14 +158,32 @@ class CrosswordPuzzle:
 		# First get list of all accross and down empty cell stretches (with length)
 			# Will likely need sub method to update this list once letters start getting put in the grid, to re-run each time a new letter is inserted.
 		across, down = {}, {}
+		rows_with_words = []
+		cols_with_words = []
 		for bs in self.blk_sqs_positions:
 			# Get the spans of cells between each of them, row and column wise...and then append to the corresponding dicts
+			if bs[0] not in rows_with_words:
+				rows_with_words.append(bs[0])
+			if bs[1] not in rows_with_words:
+				rows_with_words.append(bs[1])
 			print(bs)
 
 			continue
 
+		print(rows_with_words)
+		print(cols_with_words)
+
 			# word_join = np.str.join('',G2[0][0:5])	# command to join cells from 0,0 to 0,5; will be useful later...maybe.
 
+		def is_word(letters_of_word): # Return bool
+			"""
+			"""
+			pass
+
+		def is_there_a_possible_word(starting_or_partial_letters_of_word): # Return bool
+			"""
+			"""
+			pass
 
 		return self.filled_grid
 
@@ -183,7 +216,16 @@ def read_nyt_corpus(file, dims):
 					# print(answer_len, answer, clue)
 					clue_answer_dict[answer_len][answer].append(clue)
 
-	# print(clue_answer_dict[3].keys())
+	print(clue_answer_dict[3].keys())
+
+	w = choice(list(clue_answer_dict[3].keys()))
+	clue = clue_answer_dict[3][w][0]
+
+	print(w, clue)
+
+	for k in clue_answer_dict[4].keys():
+		if len(clue_answer_dict[4][k]) > 20:
+			print(k, clue_answer_dict[4][k])
 
 	return clue_answer_dict
 
