@@ -8,6 +8,7 @@ import copy
 from ast import literal_eval
 from random import choice
 from time import sleep
+import re
 
 def main():
 
@@ -299,11 +300,32 @@ class CrosswordPuzzle:
 
 				curr_word = np.str.join('',G[row][c1:c2])
 				print(curr_word)
+				curr_word_re = curr_word.replace('_','.')
+				print(curr_word_re)
+				# exit()
 				curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
 				print(curr_letters_and_idxs)
 
-				w = choice(list(words[max_len_across].keys()))
+				# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
+					# dicti={'the':20, 'a':10, 'over':2}
+					# regex_list=['the', 'an?']
+					# extractddicti= {k:v for k,v in dicti.items() if any (re.match("^"+regex+"$",k) for regex in regex_list)}
+					# NOW, COMPILED:
+					# regex_list_compiled=[re.compile("^"+i+"$") for i in regex_list]
+					# extractddicti= {k:v for k,v in dicti.items() if any (re.match(regex,k) for regex in regex_list_compiled)} 
 
+					# OR even "better":
+						# patterns=['the', 'an?']
+						# regex_matches = [re.compile("^"+pattern+"$").match for pattern in patterns]
+						# extractddicti= {k:v for k,v in dicti.items() if any (regex_match(k) for regex_match in regex_matches)}
+
+				w_choices = {k:v for k,v in words[max_len_across].items() if re.match(curr_word_re, k)}
+				print(w_choices.keys())
+				w = choice(list(w_choices.keys()))
+
+
+
+				# w = choice(list(words[max_len_across].keys()))
 				# sorted_words_by_freq = sorted(words[max_len_across].items(), key = lambda item: len(item[1]),reverse = True )
 				# w = choice(sorted_words_by_freq[0:100])[0]
 
@@ -341,10 +363,22 @@ class CrosswordPuzzle:
 				# print(G[r1:r2,col])
 
 				curr_word = np.str.join('',G[r1:r2,col])
+				print(curr_word)
+				curr_word_re = curr_word.replace('_','.')
+				print(curr_word_re)
 				curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
 				print(curr_letters_and_idxs)
 
-				w = choice(list(words[max_len_down].keys()))
+				# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
+				# dicti={'the':20, 'a':10, 'over':2}
+				# regex_list=['the', 'an?']
+				# extractddicti= {k:v for k,v in dicti.items() if any (re.match("^"+regex+"$",k) for regex in regex_list)}
+
+				w_choices = {k:v for k,v in words[max_len_down].items() if re.match(curr_word_re, k)}
+				print(w_choices.keys())
+				w = choice(list(w_choices.keys()))
+
+				# w = choice(list(words[max_len_down].keys()))
 				# sorted_words_by_freq = sorted(words[max_len_down].items(), key = lambda item: len(item[1]),reverse = True )
 				# w = choice(sorted_words_by_freq[0:100])[0]
 
