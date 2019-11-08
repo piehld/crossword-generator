@@ -7,6 +7,7 @@ import numpy as np
 import copy
 from ast import literal_eval
 from random import choice
+from time import sleep
 
 def main():
 
@@ -21,8 +22,8 @@ def main():
 	# print('\n\n')
 	print(xw_puzzle.empty_grid)
 
-	# nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
-	nyt_words = {3:{'aaa':['test'],'bbb':['test']}, 4:{'aaaa':['test'],'bbbb':['test']}, 5:{'aaaaa':['test'],'bbbbb':['test']}}
+	nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
+	# nyt_words = {3:{'aaa':['test'],'bbb':['test']}, 4:{'aaaa':['test'],'bbbb':['test']}, 5:{'aaaaa':['test'],'bbbbb':['test']}}
 
 	xw_puzzle.fill_grid(nyt_words)
 
@@ -297,10 +298,16 @@ class CrosswordPuzzle:
 				# print(G[row][c1:c2])
 
 				curr_word = np.str.join('',G[row][c1:c2])
+				print(curr_word)
 				curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
 				print(curr_letters_and_idxs)
 
 				w = choice(list(words[max_len_across].keys()))
+
+				# sorted_words_by_freq = sorted(words[max_len_across].items(), key = lambda item: len(item[1]),reverse = True )
+				# w = choice(sorted_words_by_freq[0:100])[0]
+
+				# sleep(3)
 
 				# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
 				if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
@@ -311,7 +318,9 @@ class CrosswordPuzzle:
 				clue = choice(words[max_len_across][w])
 				print(w, clue)
 
-				G[row][c1:c2] = w
+				# G[row][c1:c2] = w
+				for idx,letter in enumerate(w):
+					G[row][c1+idx] = letter
 
 				across_flag = False
 
@@ -336,6 +345,8 @@ class CrosswordPuzzle:
 				print(curr_letters_and_idxs)
 
 				w = choice(list(words[max_len_down].keys()))
+				# sorted_words_by_freq = sorted(words[max_len_down].items(), key = lambda item: len(item[1]),reverse = True )
+				# w = choice(sorted_words_by_freq[0:100])[0]
 
 				# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
 				if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
@@ -346,7 +357,9 @@ class CrosswordPuzzle:
 				clue = choice(words[max_len_down][w])
 				print(w, clue)
 
-				G[r1:r2,col] = w
+				for idx,letter in enumerate(w):
+					G[r1+idx][col] = letter
+
 
 				across_flag = True
 
@@ -389,16 +402,22 @@ def read_nyt_corpus(file, dims):
 					# print(answer_len, answer, clue)
 					clue_answer_dict[answer_len][answer].append(clue)
 
-	print(clue_answer_dict[3].keys())
+	# print(clue_answer_dict[3].keys())
 
-	w = choice(list(clue_answer_dict[3].keys()))
-	clue = clue_answer_dict[3][w][0]
+	# w = choice(list(clue_answer_dict[3].keys()))
+	# clue = clue_answer_dict[3][w][0]
+    #
+	# print(w, clue)
 
-	print(w, clue)
+	# for k in clue_answer_dict[4].keys():
+	# 	if len(clue_answer_dict[4][k]) > 20:
+	# 		print(k, clue_answer_dict[4][k])
 
-	for k in clue_answer_dict[4].keys():
-		if len(clue_answer_dict[4][k]) > 20:
-			print(k, clue_answer_dict[4][k])
+	# for word_len in clue_answer_dict.keys():
+	# 	clue_answer_dict[word_len] = sorted(clue_answer_dict[word_len].items(), key = lambda item: len(item[1]) )
+
+
+
 
 	return clue_answer_dict
 
