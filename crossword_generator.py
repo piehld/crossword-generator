@@ -14,17 +14,18 @@ def main():
 	black_square_density = 0.2	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
-	print(xw_puzzle)
-	for a in dir(xw_puzzle):
-		if not a.startswith('_'):
-			print(a,getattr(xw_puzzle,a))
-	print('\n\n')
+	# print(xw_puzzle)
+	# for a in dir(xw_puzzle):
+	# 	if not a.startswith('_'):
+	# 		print(a,getattr(xw_puzzle,a))
+	# print('\n\n')
 	print(xw_puzzle.empty_grid)
 
 	# nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
-	nyt_words = {3:{'aaa':'test'}, 4:{'aaaa':'test'}, 5:{'aaaaa':'test'}}
+	nyt_words = {3:{'aaa':['test'],'bbb':['test']}, 4:{'aaaa':['test'],'bbbb':['test']}, 5:{'aaaaa':['test'],'bbbbb':['test']}}
 
 	xw_puzzle.fill_grid(nyt_words)
+
 
 	return
 
@@ -74,6 +75,8 @@ class CrosswordPuzzle:
 		self.make_empty_grid()
 		# self.empty_grid = self.determine_black_square(self.empty_grid)
 
+		self.across, self.down, self.word_len_dict = self.gather_across_and_down_word_spaces()
+
 		# self.fill_grid()
 
 	def determine_black_square(self,G):
@@ -93,12 +96,6 @@ class CrosswordPuzzle:
 			G[center * 2 - int(temp/self.cols)][center * 2 - (temp % self.rows)] = '.'
 
 		return G
-
-
-
-
-
-
 
 
 	def make_empty_grid(self):
@@ -130,6 +127,7 @@ class CrosswordPuzzle:
 
 		return self.empty_grid, self.blk_sqs_positions
 
+
 	def is_empty_grid_valid(self):
 		"""
 		Check to make sure the density is low enough that a "valid puzzle" is still possible (i.e., that no two-letter words are present, etc.),
@@ -138,25 +136,16 @@ class CrosswordPuzzle:
 
 		pass
 
-	def fill_grid(self, words):
+
+	def gather_across_and_down_word_spaces(self):
 		"""
-		Method to fill the grid.
-
-		When assigning words to white-square stretches, can use: np[0][0:4] = "LAIR" (or similar, where 4 is the 'end' of the word)
-
-		Fill LONGER words first, then crossings to the longer words
-		ALSO Choose most common words first (or rank them all)
-
-		:param words: Word corpus (in dict. format) to use to fill grid.
-		"""
-
-		print("Here")
-
-		G = copy.deepcopy(self.empty_grid)
-		print(G)
+		Method to gather the collection of blank across & down spaces, into which the words will be filled.
 
 		# First get list of all across and down empty cell stretches (with length)
 			# Will likely need sub method to update this list once letters start getting put in the grid, to re-run each time a new letter is inserted.
+
+		"""
+
 		across, down = {}, {}
 		checked_down_squares = []
 
@@ -211,15 +200,65 @@ class CrosswordPuzzle:
 					elif on_blank_across_squares == False:
 						continue
 
+		# Get length of each word, and append to both the word dict itself as well as a growing dict of word lengths to inform the fill order
+		word_len_dict = {"across":{}, "down":{}}
+		for k in across.keys():
+			wlength = across[k]["end"][1] - ( across[k]["start"][1] - 1 )
+			across[k]["len"] = wlength
+			if wlength not in word_len_dict["across"].keys():
+				word_len_dict["across"].update({wlength:[k]})
+			elif wlength in word_len_dict["across"].keys():
+				word_len_dict["across"][wlength].append(k)
+
+		for k in down.keys():
+			wlength = down[k]["end"][0] - ( down[k]["start"][0] - 1 )
+			down[k]["len"] = wlength
+			if wlength not in word_len_dict["down"].keys():
+				word_len_dict["down"].update({wlength:[k]})
+			elif wlength in word_len_dict["down"].keys():
+				word_len_dict["down"][wlength].append(k)
 
 		print("Across",across)
 		print("Down",down)
-		# print(G)
-		# exit()
+		print("Word length dict",word_len_dict)
 
-		# Get the spans of cells between each of them, row and column wise...and then append to the corresponding dicts
+		return across, down, word_len_dict
 
-			# word_join = np.str.join('',G2[0][0:5])	# command to join cells from 0,0 to 0,5; will be useful later...maybe.
+
+	def refresh_word_len_dict(self, wd_len, wd_num_filled, direction):
+		"""
+		"""
+
+		print(self.word_len_dict[direction])
+
+		idx = self.word_len_dict[direction][wd_len].index(wd_num_filled)
+		self.word_len_dict[direction][wd_len].pop(idx)
+		# print(self.word_len_dict[direction])
+
+		# Now check if the list of availble words to fill is empty for the given length
+		if len(self.word_len_dict[direction][wd_len]) == 0:
+			self.word_len_dict[direction].pop(wd_len)
+
+		print(self.word_len_dict[direction])
+
+		return
+
+
+	def fill_grid(self, words):
+		"""
+		Method to fill the grid.
+
+		When assigning words to white-square stretches, can use: np[0][0:4] = "LAIR" (or similar, where 4 is the 'end' of the word)
+
+		Fill LONGER words first, then crossings to the longer words
+		ALSO Choose most common words first (or rank them all)
+
+		# word_join = np.str.join('',G2[0][0:5])	# command to join cells from 0,0 to 0,5; will be useful later...maybe.
+
+
+		:param words: Word corpus (in dict. format) to use to fill grid.
+		"""
+
 
 		def is_word(letters_of_word): # Return bool
 			"""
@@ -231,7 +270,95 @@ class CrosswordPuzzle:
 			"""
 			pass
 
+		def is_puzzle_fill_complete(xw_grid):
+			"""
+			"""
+			pass
+
+
+
+		print("Here")
+		G = copy.deepcopy(self.empty_grid)
+		print(G)
+
+		# First, choose the longest across word length to fill
+		across_flag = True
+		# for word in range(len(self.across) + len(self.down)):
+		while '_' in G:
+			if across_flag:
+				max_len_across = max(self.word_len_dict['across'].keys())
+				word_to_fill = choice(self.word_len_dict['across'][max_len_across])
+				print("Across word to fill", word_to_fill, self.across[word_to_fill])
+
+				# use for across only
+				row = self.across[word_to_fill]['start'][0]
+				c1 = self.across[word_to_fill]['start'][1]
+				c2 = self.across[word_to_fill]['end'][1] + 1
+				# print(G[row][c1:c2])
+
+				curr_word = np.str.join('',G[row][c1:c2])
+				curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
+				print(curr_letters_and_idxs)
+
+				w = choice(list(words[max_len_across].keys()))
+
+				# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
+				if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
+					print("There's a mis-match!")
+					print(G)
+					continue
+
+				clue = choice(words[max_len_across][w])
+				print(w, clue)
+
+				G[row][c1:c2] = w
+
+				across_flag = False
+
+				self.refresh_word_len_dict(max_len_across, word_to_fill, 'across')
+
+				print(G)
+
+
+			elif not across_flag:
+				max_len_down = max(self.word_len_dict['down'].keys())
+				word_to_fill = choice(self.word_len_dict['down'][max_len_down])
+				print("Down word to fill", word_to_fill, self.down[word_to_fill])
+
+				# use for down only
+				col = self.down[word_to_fill]['start'][1]
+				r1 = self.down[word_to_fill]['start'][0]
+				r2 = self.down[word_to_fill]['end'][0] + 1
+				# print(G[r1:r2,col])
+
+				curr_word = np.str.join('',G[r1:r2,col])
+				curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
+				print(curr_letters_and_idxs)
+
+				w = choice(list(words[max_len_down].keys()))
+
+				# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
+				if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
+					print("There's a mis-match!")
+					print(G)
+					continue
+
+				clue = choice(words[max_len_down][w])
+				print(w, clue)
+
+				G[r1:r2,col] = w
+
+				across_flag = True
+
+				self.refresh_word_len_dict(max_len_down, word_to_fill, 'down')
+
+				print(G)
+
+
+		exit()
+
 		return self.filled_grid
+
 
 
 def read_nyt_corpus(file, dims):
