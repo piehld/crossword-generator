@@ -246,6 +246,35 @@ class CrosswordPuzzle:
 		return
 
 
+	def update_across_and_down_with_partial_grid(self, grid_state): # updated across and down dicts with partial words to check possible validity
+		"""
+		Purpose of this function is to gather the current partial (oro completed) list of words in the grid,
+		to subsequently check each partially filled word for its potential to be a real word or not, as well
+		as if a word which was filled indirectly is a real word or not.
+		"""
+
+		for k in self.across.keys():
+			row = self.across[k]['start'][0]
+			c1 = self.across[k]['start'][1]
+			c2 = self.across[k]['end'][1] + 1
+			temp_word = np.str.join('',grid_state[row][c1:c2])
+			temp_word_re = temp_word.replace('_','.')
+
+			self.across[k].update( {"word_temp": temp_word_re})
+
+		for k in self.down.keys():
+			col = self.down[k]['start'][1]
+			r1 = self.down[k]['start'][0]
+			r2 = self.down[k]['end'][0] + 1
+			temp_word = np.str.join('',grid_state[r1:r2,col])
+			temp_word_re = temp_word.replace('_','.')
+
+			self.down[k].update( {"word_temp": temp_word_re})
+
+		return
+
+
+
 	def fill_grid(self, words):
 		"""
 		Method to fill the grid.
@@ -283,126 +312,141 @@ class CrosswordPuzzle:
 		G = copy.deepcopy(self.empty_grid)
 		print(G)
 
-		# First, choose the longest across word length to fill
 		across_flag = True
-		# for word in range(len(self.across) + len(self.down)):
+
 		while '_' in G:
-			if across_flag:
-				max_len_across = max(self.word_len_dict['across'].keys())
-				word_to_fill = choice(self.word_len_dict['across'][max_len_across])
-				print("Across word to fill", word_to_fill, self.across[word_to_fill])
+			try:
+				# First, choose the longest across word length to fill
+				# for word in range(len(self.across) + len(self.down)):
+				if across_flag:
+					max_len_across = max(self.word_len_dict['across'].keys())
+					word_to_fill = choice(self.word_len_dict['across'][max_len_across])
+					print("Across word to fill", word_to_fill, self.across[word_to_fill])
 
-				# use for across only
-				row = self.across[word_to_fill]['start'][0]
-				c1 = self.across[word_to_fill]['start'][1]
-				c2 = self.across[word_to_fill]['end'][1] + 1
-				# print(G[row][c1:c2])
+					# use for across only
+					row = self.across[word_to_fill]['start'][0]
+					c1 = self.across[word_to_fill]['start'][1]
+					c2 = self.across[word_to_fill]['end'][1] + 1
+					# print(G[row][c1:c2])
 
-				curr_word = np.str.join('',G[row][c1:c2])
-				print(curr_word)
-				curr_word_re = curr_word.replace('_','.')
-				print(curr_word_re)
-				# exit()
-				curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
-				print(curr_letters_and_idxs)
+					curr_word = np.str.join('',G[row][c1:c2])
+					print(curr_word)
+					curr_word_re = curr_word.replace('_','.')
+					print(curr_word_re)
+					# exit()
+					curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
+					print(curr_letters_and_idxs)
 
-				# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
+					# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
+						# dicti={'the':20, 'a':10, 'over':2}
+						# regex_list=['the', 'an?']
+						# extractddicti= {k:v for k,v in dicti.items() if any (re.match("^"+regex+"$",k) for regex in regex_list)}
+						# NOW, COMPILED:
+						# regex_list_compiled=[re.compile("^"+i+"$") for i in regex_list]
+						# extractddicti= {k:v for k,v in dicti.items() if any (re.match(regex,k) for regex in regex_list_compiled)}
+
+						# OR even "better":
+							# patterns=['the', 'an?']
+							# regex_matches = [re.compile("^"+pattern+"$").match for pattern in patterns]
+							# extractddicti= {k:v for k,v in dicti.items() if any (regex_match(k) for regex_match in regex_matches)}
+
+					w_choices = {k:v for k,v in words[max_len_across].items() if re.match(curr_word_re, k)}
+					# print(w_choices.keys())
+					w = choice(list(w_choices.keys()))
+
+
+
+					# w = choice(list(words[max_len_across].keys()))
+					# sorted_words_by_freq = sorted(words[max_len_across].items(), key = lambda item: len(item[1]),reverse = True )
+					# w = choice(sorted_words_by_freq[0:100])[0]
+
+					# sleep(3)
+
+					# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
+					if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
+						print("There's a mis-match!")
+						print(G)
+						continue
+
+					clue = choice(words[max_len_across][w])
+					print(w, clue)
+
+					# G[row][c1:c2] = w
+					for idx,letter in enumerate(w):
+						G[row][c1+idx] = letter
+
+					across_flag = False
+
+					self.refresh_word_len_dict(max_len_across, word_to_fill, 'across')
+					self.update_across_and_down_with_partial_grid(G)
+					print(self.across, self.down)
+					# sleep(2)
+					print(G)
+
+
+				elif not across_flag:
+					max_len_down = max(self.word_len_dict['down'].keys())
+					word_to_fill = choice(self.word_len_dict['down'][max_len_down])
+					print("Down word to fill", word_to_fill, self.down[word_to_fill])
+
+					# use for down only
+					col = self.down[word_to_fill]['start'][1]
+					r1 = self.down[word_to_fill]['start'][0]
+					r2 = self.down[word_to_fill]['end'][0] + 1
+					# print(G[r1:r2,col])
+
+					curr_word = np.str.join('',G[r1:r2,col])
+					print(curr_word)
+					curr_word_re = curr_word.replace('_','.')
+					print(curr_word_re)
+					curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
+					print(curr_letters_and_idxs)
+
+					# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
 					# dicti={'the':20, 'a':10, 'over':2}
 					# regex_list=['the', 'an?']
 					# extractddicti= {k:v for k,v in dicti.items() if any (re.match("^"+regex+"$",k) for regex in regex_list)}
-					# NOW, COMPILED:
-					# regex_list_compiled=[re.compile("^"+i+"$") for i in regex_list]
-					# extractddicti= {k:v for k,v in dicti.items() if any (re.match(regex,k) for regex in regex_list_compiled)} 
 
-					# OR even "better":
-						# patterns=['the', 'an?']
-						# regex_matches = [re.compile("^"+pattern+"$").match for pattern in patterns]
-						# extractddicti= {k:v for k,v in dicti.items() if any (regex_match(k) for regex_match in regex_matches)}
+					w_choices = {k:v for k,v in words[max_len_down].items() if re.match(curr_word_re, k)}
+					# print(w_choices.keys())
+					w = choice(list(w_choices.keys()))
 
-				w_choices = {k:v for k,v in words[max_len_across].items() if re.match(curr_word_re, k)}
-				print(w_choices.keys())
-				w = choice(list(w_choices.keys()))
+					# w = choice(list(words[max_len_down].keys()))
+					# sorted_words_by_freq = sorted(words[max_len_down].items(), key = lambda item: len(item[1]),reverse = True )
+					# w = choice(sorted_words_by_freq[0:100])[0]
+
+					# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
+					if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
+						print("There's a mis-match!")
+						print(G)
+						continue
+
+					clue = choice(words[max_len_down][w])
+					print(w, clue)
+
+					for idx,letter in enumerate(w):
+						G[r1+idx][col] = letter
 
 
+					across_flag = True
 
-				# w = choice(list(words[max_len_across].keys()))
-				# sorted_words_by_freq = sorted(words[max_len_across].items(), key = lambda item: len(item[1]),reverse = True )
-				# w = choice(sorted_words_by_freq[0:100])[0]
-
-				# sleep(3)
-
-				# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
-				if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
-					print("There's a mis-match!")
+					self.refresh_word_len_dict(max_len_down, word_to_fill, 'down')
+					self.update_across_and_down_with_partial_grid(G)
+					print(self.across, self.down)
+					# sleep(2)
 					print(G)
-					continue
 
-				clue = choice(words[max_len_across][w])
-				print(w, clue)
-
-				# G[row][c1:c2] = w
-				for idx,letter in enumerate(w):
-					G[row][c1+idx] = letter
-
-				across_flag = False
-
-				self.refresh_word_len_dict(max_len_across, word_to_fill, 'across')
-
-				print(G)
-
-
-			elif not across_flag:
-				max_len_down = max(self.word_len_dict['down'].keys())
-				word_to_fill = choice(self.word_len_dict['down'][max_len_down])
-				print("Down word to fill", word_to_fill, self.down[word_to_fill])
-
-				# use for down only
-				col = self.down[word_to_fill]['start'][1]
-				r1 = self.down[word_to_fill]['start'][0]
-				r2 = self.down[word_to_fill]['end'][0] + 1
-				# print(G[r1:r2,col])
-
-				curr_word = np.str.join('',G[r1:r2,col])
-				print(curr_word)
-				curr_word_re = curr_word.replace('_','.')
-				print(curr_word_re)
-				curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
-				print(curr_letters_and_idxs)
-
-				# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
-				# dicti={'the':20, 'a':10, 'over':2}
-				# regex_list=['the', 'an?']
-				# extractddicti= {k:v for k,v in dicti.items() if any (re.match("^"+regex+"$",k) for regex in regex_list)}
-
-				w_choices = {k:v for k,v in words[max_len_down].items() if re.match(curr_word_re, k)}
-				print(w_choices.keys())
-				w = choice(list(w_choices.keys()))
-
-				# w = choice(list(words[max_len_down].keys()))
-				# sorted_words_by_freq = sorted(words[max_len_down].items(), key = lambda item: len(item[1]),reverse = True )
-				# w = choice(sorted_words_by_freq[0:100])[0]
-
-				# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
-				if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
-					print("There's a mis-match!")
-					print(G)
-					continue
-
-				clue = choice(words[max_len_down][w])
-				print(w, clue)
-
-				for idx,letter in enumerate(w):
-					G[r1+idx][col] = letter
-
-
+			except Exception as err:
+				print("Exception raised:", err)
+				print("Re-attempting fill process...")
+				G = copy.deepcopy(self.empty_grid)
 				across_flag = True
-
-				self.refresh_word_len_dict(max_len_down, word_to_fill, 'down')
-
-				print(G)
-
+				sleep(3)
+				continue
 
 		exit()
+
+		# self.filled_grid = copy.deepcopy(G)
 
 		return self.filled_grid
 
