@@ -2,6 +2,7 @@
 # Crossword-Puzzle Generator
 # Group: Dennis Piehl and Xianzhuo Cao
 
+from union_find import UnionFindSet
 import numpy as np
 # import matplotlib.pyplot as plt
 import copy
@@ -12,8 +13,8 @@ import re
 
 def main():
 
-	grid_dimensions = (5, 5)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.2	# [Maximum] Fraction of squares that will be black
+	grid_dimensions = (7, 7)	# Number rows and columns in crossword puzzle grid
+	black_square_density = 0.1	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 	# print(xw_puzzle)
@@ -82,6 +83,10 @@ class CrosswordPuzzle:
 		# self.fill_grid()
 
 	def determine_black_square(self,G):
+		'''
+		Randomly choose black_squares, and make sure it obeys three rules above
+		'''
+
 		center = int(self.rows/2)
 		if self.ifcenter_black == True:
 			G[center][center] = '.'
@@ -91,6 +96,9 @@ class CrosswordPuzzle:
 		while(rand_nums > 0):
 			rand_nums -= 1
 			temp = choice(rand_pool)
+			while(self.check_valid(G,temp) == False):
+				temp = choice(rand_pool)
+				#print(G)
 			rand_pool.remove(temp)
 			self.blk_sqs_positions.append((int(temp/self.cols),temp % self.rows))
 			G[int(temp/self.cols)][temp % self.rows] = '.'
@@ -98,6 +106,75 @@ class CrosswordPuzzle:
 			G[center * 2 - int(temp/self.cols)][center * 2 - (temp % self.rows)] = '.'
 
 		return G
+
+	def check_valid(self,G,next_move):
+		'''
+		check if a puzzle is valid when generating black squares
+		'''
+		puzzle = copy.deepcopy(G)
+		row,col = int(next_move/self.cols),next_move % self.rows
+		puzzle[row][col] = '.'
+		return self.check_rule1(puzzle,row,col) and self.check_rule2(puzzle)
+
+	def check_rule1(self,puzzle,row,col):
+		''' 
+		check if all words are no less than 3 letters
+		'''
+		cur_length = 0
+		for c in range(0,self.cols): # check if current row obeys the first rule
+			if puzzle[row][c] == "_":
+				cur_length += 1
+			if puzzle[row][c] == ".":
+				if cur_length < 3 and cur_length != 0:
+					return False
+				else:
+					cur_length = 0
+		if cur_length in (1,2):
+			return False
+		cur_length = 0
+		for r in range(0,self.rows): # check if current column obeys the first rule
+			if puzzle[r][col] == "_":
+				cur_length += 1
+			if puzzle[r][col] == ".":
+				if cur_length < 3 and cur_length != 0:
+					return False
+				else:
+					cur_length = 0
+		if cur_length in (1,2):
+			return False
+		return True
+
+	def check_rule2(self,puzzle):
+		'''
+		check if all white grids are connected
+		use union find
+		'''
+		n = self.rows * self.cols
+		s = UnionFindSet(n)
+		### Everytime union your right and your down
+		for r in range(0,self.rows):
+			for c in range(0,self.cols):
+				if puzzle[r][c] == "_":
+					if r + 1 < self.rows and puzzle[r+1][c] == "_":
+						s.union(r*self.cols+c,(r+1)*self.cols+c)
+					if c + 1 < self.cols and puzzle[r][c+1] == "_":
+						s.union(r*self.cols+c,r*self.cols+c+1)
+				else:
+					continue
+		parent = -1
+		for r in range(0,self.rows):
+			for c in range(0,self.cols):
+				if puzzle[r][c] == "_":
+					if parent == -1:
+						parent = r * self.cols + c
+					else:
+						if parent != s.find(r*self.cols+c):
+							return False
+
+		return True
+
+
+
 
 
 	def make_empty_grid(self):
@@ -120,11 +197,12 @@ class CrosswordPuzzle:
 			rand = np.random.random_integers( low=0, high=self.cols-1, size=(1,2) )
 			rand_pos = (rand[0,0], rand[0,1])
 
+
 		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
-		G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
+		#G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
 
-		self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
-
+		#self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
+		G = self.determine_black_square(G)
 		self.empty_grid = copy.deepcopy(G)
 
 		return self.empty_grid, self.blk_sqs_positions
