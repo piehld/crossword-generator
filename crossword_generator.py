@@ -17,21 +17,15 @@ def main():
 	black_square_density = 0.1	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
-	# print(xw_puzzle)
-	# for a in dir(xw_puzzle):
-	# 	if not a.startswith('_'):
-	# 		print(a,getattr(xw_puzzle,a))
-	# print('\n\n')
+
 	print(xw_puzzle.empty_grid)
 
 	nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
-	# nyt_words = {3:{'aaa':['test'],'bbb':['test']}, 4:{'aaaa':['test'],'bbbb':['test']}, 5:{'aaaaa':['test'],'bbbbb':['test']}}
+	nyt_words = sort_word_dic(nyt_words) # Sort nyt_words by its length of the hints
 
 	xw_puzzle.fill_grid(nyt_words)
 
-
 	return
-
 
 
 class CrosswordPuzzle:
@@ -76,8 +70,6 @@ class CrosswordPuzzle:
 		## Call main methods upon initialization
 
 		self.make_empty_grid()
-		# self.empty_grid = self.determine_black_square(self.empty_grid)
-
 		self.across, self.down, self.word_len_dict = self.gather_across_and_down_word_spaces()
 
 		# self.fill_grid()
@@ -98,7 +90,6 @@ class CrosswordPuzzle:
 			temp = choice(rand_pool)
 			while(self.check_valid(G,temp) == False):
 				temp = choice(rand_pool)
-				#print(G)
 			rand_pool.remove(temp)
 			self.blk_sqs_positions.append((int(temp/self.cols),temp % self.rows))
 			G[int(temp/self.cols)][temp % self.rows] = '.'
@@ -187,7 +178,6 @@ class CrosswordPuzzle:
 		# G = np.empty(self.dims, dtype=np.string_)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D)
 		G = np.empty(self.dims, dtype=str)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D); Also, if you use "np.string_" this actually makes it an array of "bytes"...?!
 
-		# G[:] = ''	# Set all initialized cells to empty
 		G[:] = '_'	# Set all initialized cells to '_' so that columns line up on stdout (i.e., instead of setting them to empty '')
 
 		# NORMALLY, will want to RANDOMLY pick a non-black square and then make it black (as well as the
@@ -198,10 +188,6 @@ class CrosswordPuzzle:
 			rand_pos = (rand[0,0], rand[0,1])
 
 
-		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
-		#G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
-
-		#self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
 		G = self.determine_black_square(G)
 		self.empty_grid = copy.deepcopy(G)
 
@@ -577,6 +563,17 @@ def read_nyt_corpus(file, dims):
 
 	return clue_answer_dict
 
+def sort_word_dic(word):
+	'''
+	Sort the dictionary by its length of hints
+	'''
+	for wordlength in word.keys():
+		pairs= sorted(word[wordlength].items(),key = lambda item: len(item[1]),reverse = True)
+		new_dic = {}
+		for pair in pairs:
+			new_dic[pair[0]] = pair[1]
+		word[wordlength] = copy.deepcopy(new_dic)
+	return word
 
 
 if __name__ == "__main__":
