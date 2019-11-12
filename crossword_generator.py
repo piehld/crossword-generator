@@ -14,7 +14,7 @@ import re
 def main():
 
 	grid_dimensions = (7, 7)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.1	# [Maximum] Fraction of squares that will be black
+	black_square_density = 0.2	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
@@ -417,8 +417,6 @@ class CrosswordPuzzle:
 					w_choices = {k:v for k,v in words[max_len_across].items() if re.match(curr_word_re, k)}
 					# print(w_choices.keys())
 					w = choice(list(w_choices.keys()))
-
-
 
 					# w = choice(list(words[max_len_across].keys()))
 					# sorted_words_by_freq = sorted(words[max_len_across].items(), key = lambda item: len(item[1]),reverse = True )
