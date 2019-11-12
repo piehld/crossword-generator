@@ -10,10 +10,12 @@ from ast import literal_eval
 from random import choice
 from time import sleep
 import re
+import pprint
+
 
 def main():
 
-	grid_dimensions = (7, 7)	# Number rows and columns in crossword puzzle grid
+	grid_dimensions = (5, 5)	# Number rows and columns in crossword puzzle grid
 	black_square_density = 0.2	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
@@ -74,10 +76,30 @@ class CrosswordPuzzle:
 
 		# self.fill_grid()
 
-	def determine_black_square(self,G):
-		'''
+	def make_empty_grid(self):
+		"""
+		Method to generate a random empty grid, with symmetrical black and white squares, and numbering.
+
 		Randomly choose black_squares, and make sure it obeys three rules above
-		'''
+
+		For testing purposes, will start with simple 5x5 grid with four corners set as black squares.
+		"""
+
+		G = np.empty(self.dims, dtype=str)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D); Also, if you use "np.string_" this actually makes it an array of "bytes"...?!
+		G[:] = '_'	# Set all initialized cells to '_' so that columns line up on stdout (i.e., instead of setting them to empty '')
+
+		# NORMALLY, will want to RANDOMLY pick a non-black square and then make it black (as well as the
+		# symmetric/transpose location), so long as it doesn't create a rule violation in the standard puzzle design format
+		# (e.g., cannot have any completely isolated regions, nor any white spaces flanked on either side by black squares).
+
+		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
+		G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
+		self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
+		self.empty_grid = copy.deepcopy(G)
+		return self.empty_grid, self.blk_sqs_positions
+
+		# Below is random generator -- for now use predetermined grid above.
+		# When ready, remove 4 lines above
 
 		center = int(self.rows/2)
 		if self.ifcenter_black == True:
@@ -96,7 +118,10 @@ class CrosswordPuzzle:
 			self.blk_sqs_positions.append((center * 2 - int(temp/self.cols),center * 2 - temp % self.rows))  # make the board symmetric
 			G[center * 2 - int(temp/self.cols)][center * 2 - (temp % self.rows)] = '.'
 
-		return G
+		self.empty_grid = copy.deepcopy(G)
+
+		return self.empty_grid, self.blk_sqs_positions
+
 
 	def check_valid(self,G,next_move):
 		'''
@@ -108,7 +133,7 @@ class CrosswordPuzzle:
 		return self.check_rule1(puzzle,row,col) and self.check_rule2(puzzle)
 
 	def check_rule1(self,puzzle,row,col):
-		''' 
+		'''
 		check if all words are no less than 3 letters
 		'''
 		cur_length = 0
@@ -165,33 +190,6 @@ class CrosswordPuzzle:
 		return True
 
 
-
-
-
-	def make_empty_grid(self):
-		"""
-		Method to generate a random empty grid, with symmetrical black and white squares, and numbering.
-
-		For testing purposes, will start with simple 5x5 grid with four corners set as black squares.
-		"""
-
-		# G = np.empty(self.dims, dtype=np.string_)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D)
-		G = np.empty(self.dims, dtype=str)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D); Also, if you use "np.string_" this actually makes it an array of "bytes"...?!
-
-		G[:] = '_'	# Set all initialized cells to '_' so that columns line up on stdout (i.e., instead of setting them to empty '')
-
-		# NORMALLY, will want to RANDOMLY pick a non-black square and then make it black (as well as the
-		# symmetric/transpose location), so long as it doesn't create a rule violation in the standard puzzle design format
-		# (e.g., cannot have any completely isolated regions, nor any white spaces flanked on either side by black squares).
-		for bs in range(self.num_blk_sqs):
-			rand = np.random.random_integers( low=0, high=self.cols-1, size=(1,2) )
-			rand_pos = (rand[0,0], rand[0,1])
-
-
-		G = self.determine_black_square(G)
-		self.empty_grid = copy.deepcopy(G)
-
-		return self.empty_grid, self.blk_sqs_positions
 
 
 	def is_empty_grid_valid(self):
@@ -312,7 +310,7 @@ class CrosswordPuzzle:
 
 	def update_across_and_down_with_partial_grid(self, grid_state): # updated across and down dicts with partial words to check possible validity
 		"""
-		Purpose of this function is to gather the current partial (oro completed) list of words in the grid,
+		Purpose of this function is to gather the current partial (or completed) list of words in the grid,
 		to subsequently check each partially filled word for its potential to be a real word or not, as well
 		as if a word which was filled indirectly is a real word or not.
 		"""
@@ -338,8 +336,74 @@ class CrosswordPuzzle:
 		return
 
 
+	def gather_all_possible_words(self, grid_state, word_dict):
+		"""
+		Method to gather the number of possible words that can be filled into the current state of the grid,
+		based on the partial fill of the grid so far.
 
-	def fill_grid(self, words):
+		# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
+
+		"""
+
+		# TO ADD: Maybe don't run this if > 10000 possibilities
+		# OR BETTER: In list creation below, only gather the words with a partial letter in it, (i.e., ignore all-blank words...)
+
+		curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys()] + [self.down[k]['word_temp'] for k in self.down.keys()]
+		print(curr_grid_word_patterns)
+
+		curr_grid_word_regex_compiled_dict = {}
+		for wp in curr_grid_word_patterns:
+			if len(wp) not in curr_grid_word_regex_compiled_dict.keys():
+				curr_grid_word_regex_compiled_dict.update({len(wp):[re.compile(wp).match]})
+			else:
+				curr_grid_word_regex_compiled_dict[len(wp)].append(re.compile(wp).match)
+
+		num_possible_words_to_fill = 0
+		all_word_choices = {}
+		for wlen in curr_grid_word_regex_compiled_dict.keys():
+			w_choices = {k:v for k,v in word_dict[wlen].items() if any ( regex_match(k) for regex_match in curr_grid_word_regex_compiled_dict[wlen] ) }
+			all_word_choices.update( {wlen : w_choices} )
+			print("Number possible words of length",wlen,"=", len(w_choices))
+			num_possible_words_to_fill += len(w_choices)
+
+		all_possible_words_by_curr_word = {}
+		for i in range(len(curr_grid_word_patterns)):
+			curr_word = curr_grid_word_patterns[i]
+			curr_word_len = len(curr_word)
+			curr_word_choices = {k for k in all_word_choices[curr_word_len].keys() if re.match(curr_word, k)}
+			# curr_word_choices = {k:v for k,v in all_word_choices[curr_word_len].items() if re.match(curr_word, k)}
+			# curr_word_choices = {curr_word:v for k,v in all_word_choices[curr_word_len].items() if re.match(curr_word, k)}
+			# all_possible_words_by_curr_word.update(curr_word_choices)
+			all_possible_words_by_curr_word.update({curr_word:curr_word_choices})
+
+
+		print("Total number of possible word choices so far:", num_possible_words_to_fill)
+
+
+		# if num_possible_words_to_fill < 100:
+			# pprint.pprint(all_possible_words_by_curr_word)
+			# print([v for k,v in all_word_choices.items()])
+
+		# TO ADD: Return the whole dictionary as already done here, but also return which across or down word to fill next based on having the fewest possible fills
+		return all_word_choices
+
+
+	def is_fill_of_rest_of_grid_possible(self, grid_state, word_dict): # return bool
+		"""
+		Method to check if filling of all remaining words is possible based on the letters in partially-filled words,
+		as well as if any indirectly filled words are actually real words.
+
+		"""
+
+		# curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys()] + [self.down[k]['word_temp'] for k in self.down.keys()]
+
+		return True
+
+		return False
+
+
+
+	def fill_grid(self, word_dict):
 		"""
 		Method to fill the grid.
 
@@ -351,7 +415,7 @@ class CrosswordPuzzle:
 		# word_join = np.str.join('',G2[0][0:5])	# command to join cells from 0,0 to 0,5; will be useful later...maybe.
 
 
-		:param words: Word corpus (in dict. format) to use to fill grid.
+		:param word_dict: Word corpus (in dict. format) to use to fill grid.
 		"""
 
 
@@ -370,9 +434,6 @@ class CrosswordPuzzle:
 			"""
 			pass
 
-
-
-		print("Here")
 		G = copy.deepcopy(self.empty_grid)
 		print(G)
 
@@ -381,121 +442,68 @@ class CrosswordPuzzle:
 		while '_' in G:
 			try:
 				# First, choose the longest across word length to fill
-				# for word in range(len(self.across) + len(self.down)):
 				if across_flag:
-					max_len_across = max(self.word_len_dict['across'].keys())
-					word_to_fill = choice(self.word_len_dict['across'][max_len_across])
+					self.update_across_and_down_with_partial_grid(G)
+					max_word_len = max(self.word_len_dict['across'].keys())
+					word_to_fill = choice(self.word_len_dict['across'][max_word_len])
 					print("Across word to fill", word_to_fill, self.across[word_to_fill])
 
 					# use for across only
 					row = self.across[word_to_fill]['start'][0]
 					c1 = self.across[word_to_fill]['start'][1]
 					c2 = self.across[word_to_fill]['end'][1] + 1
-					# print(G[row][c1:c2])
 
-					curr_word = np.str.join('',G[row][c1:c2])
-					print(curr_word)
-					curr_word_re = curr_word.replace('_','.')
-					print(curr_word_re)
-					# exit()
-					curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
-					print(curr_letters_and_idxs)
-
-					# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
-						# dicti={'the':20, 'a':10, 'over':2}
-						# regex_list=['the', 'an?']
-						# extractddicti= {k:v for k,v in dicti.items() if any (re.match("^"+regex+"$",k) for regex in regex_list)}
-						# NOW, COMPILED:
-						# regex_list_compiled=[re.compile("^"+i+"$") for i in regex_list]
-						# extractddicti= {k:v for k,v in dicti.items() if any (re.match(regex,k) for regex in regex_list_compiled)}
-
-						# OR even "better":
-							# patterns=['the', 'an?']
-							# regex_matches = [re.compile("^"+pattern+"$").match for pattern in patterns]
-							# extractddicti= {k:v for k,v in dicti.items() if any (regex_match(k) for regex_match in regex_matches)}
-
-					w_choices = {k:v for k,v in words[max_len_across].items() if re.match(curr_word_re, k)}
-					# print(w_choices.keys())
-					w = choice(list(w_choices.keys()))
-
-					# w = choice(list(words[max_len_across].keys()))
-					# sorted_words_by_freq = sorted(words[max_len_across].items(), key = lambda item: len(item[1]),reverse = True )
-					# w = choice(sorted_words_by_freq[0:100])[0]
-
-					# sleep(3)
-
-					# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
-					if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
-						print("There's a mis-match!")
-						print(G)
-						continue
-
-					clue = choice(words[max_len_across][w])
+					all_word_choices = self.gather_all_possible_words(G, word_dict)
+					w = choice(list(all_word_choices[max_word_len].keys()))
+					clue = choice(all_word_choices[max_word_len][w])
 					print(w, clue)
 
-					# G[row][c1:c2] = w
+					# w_choices = {k:v for k,v in word_dict[max_word_len].items() if re.match(self.across[word_to_fill]['word_temp'], k)}
+					# w = choice(list(w_choices.keys()))
+
+					# Lambda function for ranking word use frequency
+					# sorted_words_by_freq = sorted(word_dict[max_word_len].items(), key = lambda item: len(item[1]),reverse = True )
+					# w = choice(sorted_words_by_freq[0:100])[0]
+
 					for idx,letter in enumerate(w):
 						G[row][c1+idx] = letter
 
 					across_flag = False
 
-					self.refresh_word_len_dict(max_len_across, word_to_fill, 'across')
-					self.update_across_and_down_with_partial_grid(G)
+					self.refresh_word_len_dict(max_word_len, word_to_fill, 'across')
 					print(self.across, self.down)
-					# sleep(2)
 					print(G)
 
-
 				elif not across_flag:
-					max_len_down = max(self.word_len_dict['down'].keys())
-					word_to_fill = choice(self.word_len_dict['down'][max_len_down])
+					self.update_across_and_down_with_partial_grid(G)
+					max_word_len = max(self.word_len_dict['down'].keys())
+					word_to_fill = choice(self.word_len_dict['down'][max_word_len])
 					print("Down word to fill", word_to_fill, self.down[word_to_fill])
 
 					# use for down only
 					col = self.down[word_to_fill]['start'][1]
 					r1 = self.down[word_to_fill]['start'][0]
 					r2 = self.down[word_to_fill]['end'][0] + 1
-					# print(G[r1:r2,col])
 
-					curr_word = np.str.join('',G[r1:r2,col])
-					print(curr_word)
-					curr_word_re = curr_word.replace('_','.')
-					print(curr_word_re)
-					curr_letters_and_idxs = [(ix,l) for (ix,l) in enumerate(curr_word) if l != '_']
-					print(curr_letters_and_idxs)
-
-					# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
-					# dicti={'the':20, 'a':10, 'over':2}
-					# regex_list=['the', 'an?']
-					# extractddicti= {k:v for k,v in dicti.items() if any (re.match("^"+regex+"$",k) for regex in regex_list)}
-
-					w_choices = {k:v for k,v in words[max_len_down].items() if re.match(curr_word_re, k)}
-					# print(w_choices.keys())
-					w = choice(list(w_choices.keys()))
-
-					# w = choice(list(words[max_len_down].keys()))
-					# sorted_words_by_freq = sorted(words[max_len_down].items(), key = lambda item: len(item[1]),reverse = True )
-					# w = choice(sorted_words_by_freq[0:100])[0]
-
-					# Check if chosen word agres with current string of letters of current word [***STUPID SIMPLE WAY OF CHECKING AND FILLING PUZZLE*** -- WILL IMPROVE LATER]
-					if not all([ w[ix] == l for (ix,l) in curr_letters_and_idxs ]):
-						print("There's a mis-match!")
-						print(G)
-						continue
-
-					clue = choice(words[max_len_down][w])
+					all_word_choices = self.gather_all_possible_words(G, word_dict)
+					w = choice(list(all_word_choices[max_word_len].keys()))
+					clue = choice(all_word_choices[max_word_len][w])
 					print(w, clue)
+
+					# w_choices = {k:v for k,v in word_dict[max_word_len].items() if re.match(self.down[word_to_fill]['word_temp'], k)}
+					# w = choice(list(w_choices.keys()))
+
+					# Lambda function for ranking word use frequency
+					# sorted_words_by_freq = sorted(word_dict[max_word_len].items(), key = lambda item: len(item[1]),reverse = True )
+					# w = choice(sorted_words_by_freq[0:100])[0]
 
 					for idx,letter in enumerate(w):
 						G[r1+idx][col] = letter
 
-
 					across_flag = True
 
-					self.refresh_word_len_dict(max_len_down, word_to_fill, 'down')
-					self.update_across_and_down_with_partial_grid(G)
+					self.refresh_word_len_dict(max_word_len, word_to_fill, 'down')
 					print(self.across, self.down)
-					# sleep(2)
 					print(G)
 
 			except Exception as err:
@@ -508,7 +516,7 @@ class CrosswordPuzzle:
 
 		exit()
 
-		# self.filled_grid = copy.deepcopy(G)
+		self.filled_grid = copy.deepcopy(G)
 
 		return self.filled_grid
 
@@ -542,24 +550,11 @@ def read_nyt_corpus(file, dims):
 					# print(answer_len, answer, clue)
 					clue_answer_dict[answer_len][answer].append(clue)
 
-	# print(clue_answer_dict[3].keys())
-
-	# w = choice(list(clue_answer_dict[3].keys()))
-	# clue = clue_answer_dict[3][w][0]
-    #
-	# print(w, clue)
-
-	# for k in clue_answer_dict[4].keys():
-	# 	if len(clue_answer_dict[4][k]) > 20:
-	# 		print(k, clue_answer_dict[4][k])
-
 	# for word_len in clue_answer_dict.keys():
 	# 	clue_answer_dict[word_len] = sorted(clue_answer_dict[word_len].items(), key = lambda item: len(item[1]) )
 
-
-
-
 	return clue_answer_dict
+
 
 def sort_word_dic(word):
 	'''
