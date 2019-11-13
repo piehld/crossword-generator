@@ -22,10 +22,12 @@ def main():
 
 	print(xw_puzzle.empty_grid)
 
-	nyt_words = read_nyt_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
-	nyt_words = sort_word_dic(nyt_words) # Sort nyt_words by its length of the hints
+	# word_corpus = read_word_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
+	word_corpus = read_word_corpus('./dict_sources/wordnet/index.noun.processed.txt', grid_dimensions)
 
-	xw_puzzle.fill_grid(nyt_words)
+	word_corpus = sort_word_dic(word_corpus) # Sort word_corpus by its length of the hints
+
+	xw_puzzle.fill_grid(word_corpus)
 
 	return
 
@@ -570,9 +572,9 @@ class CrosswordPuzzle:
 
 
 
-def read_nyt_corpus(file, dims):
+def read_word_corpus(file, dims):
 	"""
-	Function to read in the NYT crossword clue corpus.
+	Function to read in the provided dictionary word corpus.
 
 	Will we be able to store this entire thing in memory?
 	"""
@@ -587,7 +589,7 @@ def read_nyt_corpus(file, dims):
 	with open(file, 'r') as f:
 		for line in f:
 			clue = line.split('\t')[0]
-			answer = line.split('\t')[1]
+			answer = line.split('\t')[1].strip()
 			answer_len = len(answer)
 
 			if answer_len is not None and answer_len > 0:
