@@ -71,11 +71,10 @@ class CrosswordPuzzle:
 		self.across, self.down, self.word_len_dict = None, None, None
 
 		## Call main methods upon initialization
-
 		self.make_empty_grid()
 		self.gather_across_and_down_word_spaces()
-
 		# self.fill_grid()
+
 
 	def make_empty_grid(self):
 		"""
@@ -375,7 +374,7 @@ class CrosswordPuzzle:
 		# TO ADD: Maybe don't run this if > 10000 possibilities
 		# OR BETTER: In list creation below, only gather the words with a partial letter in it, (i.e., ignore all-blank words...)
 
-		curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys()] + [self.down[k]['word_temp'] for k in self.down.keys()]
+		curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp']] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp']]
 		print(curr_grid_word_patterns)
 
 		curr_grid_word_regex_compiled_dict = {}
@@ -407,7 +406,7 @@ class CrosswordPuzzle:
 
 		print("Total number of possible word choices so far:", num_possible_words_to_fill)
 
-		minimum_num_possible_fills = 1000 # arbitrarily chosen number of possible fills, to compare number possibilities for each partial word of the puzzle
+		minimum_num_possible_fills = 100000 # arbitrarily chosen number of possible fills, to compare number possibilities for each partial word of the puzzle
 		most_restricted_word_to_fill = None # initialize variable
 		for curr_word in all_possible_words_by_curr_word.keys():
 			num_choices_for_curr_word = len(all_possible_words_by_curr_word[curr_word])
@@ -480,82 +479,86 @@ class CrosswordPuzzle:
 		G = copy.deepcopy(self.empty_grid)
 		print(G)
 
+		fill_count = 0
 		across_flag = True
 
 		while '_' in G:
 
+			self.update_across_and_down_with_partial_grid(G)
+
 			# TO ADD: May want to fill longest words first (even if at first they might have more possibilities than shorter words...say, for the first 1/5 of the grid do it this way...?)
 
 			try:
+
+				all_word_choices_by_part_word, most_limited_word = self.gather_all_possible_words(G, word_dict)
+
 				# First, choose the longest across word length to fill
+				# NEED TO DO SOME MORE TESTING TO SEE IF THIS STRATEGY SAVES ANY TIME
+				# 	(E.g., get an average number of iterations required to arrive at a complete puzzle with and without this strategy)
+				# EVEN IF you determine that this doesn't improve the speed of puzzle filling, you can still keep this code block
+				# 	to allow for the initial entry of pre-determined words (e.g., on the basis of puzzle theme)
+				if fill_count < 3:
+					if across_flag:
+						word_dir = 'across'
+						word_len_to_fill = max(self.word_len_dict[word_dir].keys())
+						word_id_num_to_fill = choice(self.word_len_dict[word_dir][word_len_to_fill])
+						print("Long across word to fill", word_id_num_to_fill, self.across[word_id_num_to_fill])
+						w = choice(list(all_word_choices_by_part_word[self.across[word_id_num_to_fill]['word_temp']]))
+						across_flag = False
+					else:
+						word_dir = 'down'
+						word_len_to_fill = max(self.word_len_dict[word_dir].keys())
+						word_id_num_to_fill = choice(self.word_len_dict[word_dir][word_len_to_fill])
+						print("Long down word to fill", word_id_num_to_fill, self.down[word_id_num_to_fill])
+						w = choice(list(all_word_choices_by_part_word[self.down[word_id_num_to_fill]['word_temp']]))
+						across_flag = True
 
-				if across_flag:
-					self.update_across_and_down_with_partial_grid(G)
-					# word_len_to_fill = max(self.word_len_dict['across'].keys())
-					# word_id_num_to_fill = choice(self.word_len_dict['across'][word_len_to_fill])
-					print("Across word to fill", word_id_num_to_fill, self.across[word_id_num_to_fill])
+					clue = choice(word_dict[word_len_to_fill][w])
 
-					all_word_choices_by_part_word, most_limited_word = self.gather_all_possible_words(G, word_dict)
 
-					word_id_num_to_fill = choice([k for k in self.across.keys() if self.across[k]['word_temp'] == most_limited_word])
-					word_id_num_to_fill = choice([k for k in self.down.keys() if self.down[k]['word_temp'] == most_limited_word])
+				else:
+					print("Most limited word:", most_limited_word)
+
+					# First check if the word is in the across dict; If not, then check if it's in the down dict
+					most_limited_word_ids = [k for k in self.across.keys() if self.across[k]['word_temp'] == most_limited_word]
+					if len(most_limited_word_ids) == 0:
+						most_limited_word_ids = [k for k in self.down.keys() if self.down[k]['word_temp'] == most_limited_word]
+						word_dir = 'down'
+					else:
+						word_dir = 'across'
+
+					word_id_num_to_fill = choice(most_limited_word_ids)
 					word_len_to_fill = len(most_limited_word)
-
 
 					print(word_dir, "word to fill:", word_id_num_to_fill, most_limited_word)
 
-
-
-					w = choice(list(all_word_choices_by_part_word[self.across[word_id_num_to_fill]['word_temp']]))
+					w = choice(list(all_word_choices_by_part_word[most_limited_word]))
 					clue = choice(word_dict[word_len_to_fill][w])
-					print(w, clue)
 
-					# w_choices = {k:v for k,v in word_dict[word_len_to_fill].items() if re.match(self.across[word_id_num_to_fill]['word_temp'], k)}
-					# w = choice(list(w_choices.keys()))
 
-					# Lambda function for ranking word use frequency
-					# sorted_words_by_freq = sorted(word_dict[word_len_to_fill].items(), key = lambda item: len(item[1]),reverse = True )
-					# w = choice(sorted_words_by_freq[0:100])[0]
+				G = self.fill_word(G, word_id_num_to_fill, w, word_dir)
+				self.refresh_word_len_dict(word_len_to_fill, word_id_num_to_fill, word_dir)
 
-					G = self.fill_word(G, word_id_num_to_fill, w, 'across')
+				print(w, clue)
+				print(G)
 
-					across_flag = False
+				fill_count += 1
 
-					self.refresh_word_len_dict(word_len_to_fill, word_id_num_to_fill, 'across')
-					# print(self.across, self.down)
-					print(G)
 
-				elif not across_flag:
-					self.update_across_and_down_with_partial_grid(G)
-					word_len_to_fill = max(self.word_len_dict['down'].keys())
-					word_id_num_to_fill = choice(self.word_len_dict['down'][word_len_to_fill])
-					print("Down word to fill", word_id_num_to_fill, self.down[word_id_num_to_fill])
+				# Lambda function for ranking word use frequency
+				# sorted_words_by_freq = sorted(word_dict[word_len_to_fill].items(), key = lambda item: len(item[1]),reverse = True )
+				# w = choice(sorted_words_by_freq[0:100])[0]
 
-					all_word_choices_by_part_word, most_limited_word = self.gather_all_possible_words(G, word_dict)
-					w = choice(list(all_word_choices_by_part_word[self.down[word_id_num_to_fill]['word_temp']]))
-					clue = choice(word_dict[word_len_to_fill][w])
-					print(w, clue)
-
-					# w_choices = {k:v for k,v in word_dict[word_len_to_fill].items() if re.match(self.down[word_id_num_to_fill]['word_temp'], k)}
-					# w = choice(list(w_choices.keys()))
-
-					# Lambda function for ranking word use frequency
-					# sorted_words_by_freq = sorted(word_dict[word_len_to_fill].items(), key = lambda item: len(item[1]),reverse = True )
-					# w = choice(sorted_words_by_freq[0:100])[0]
-
-					G = self.fill_word(G, word_id_num_to_fill, w, 'down')
-					across_flag = True
-
-					self.refresh_word_len_dict(word_len_to_fill, word_id_num_to_fill, 'down')
-					# print(self.across, self.down)
-					print(G)
+				# Old regex matching approach
+				# w_choices = {k:v for k,v in word_dict[word_len_to_fill].items() if re.match(self.across[word_id_num_to_fill]['word_temp'], k)}
+				# w_choices = {k:v for k,v in word_dict[word_len_to_fill].items() if re.match(self.down[word_id_num_to_fill]['word_temp'], k)}
+				# w = choice(list(w_choices.keys()))
 
 			except Exception as err:
 				print("\nException raised:", err)
 				print("Re-attempting fill process...\n")
 				G = copy.deepcopy(self.empty_grid)
 				self.gather_across_and_down_word_spaces()
-				across_flag = True
 				# sleep(3)
 				continue
 
