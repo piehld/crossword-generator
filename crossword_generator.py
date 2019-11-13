@@ -68,11 +68,12 @@ class CrosswordPuzzle:
 		self.blk_sqs_positions = None
 		self.empty_grid = None
 		self.filled_grid = None
+		self.across, self.down, self.word_len_dict = None, None, None
 
 		## Call main methods upon initialization
 
 		self.make_empty_grid()
-		self.across, self.down, self.word_len_dict = self.gather_across_and_down_word_spaces()
+		self.gather_across_and_down_word_spaces()
 
 		# self.fill_grid()
 
@@ -210,7 +211,7 @@ class CrosswordPuzzle:
 
 		"""
 
-		across, down = {}, {}
+		self.across, self.down = {}, {}
 		checked_down_squares = []
 
 		# Gather down words FIRST (since that's how numbering is ordered)
@@ -224,76 +225,76 @@ class CrosswordPuzzle:
 					# Swap Column block up here? For ordering of numbers?
 					if on_blank_across_squares == True:
 						if c == self.cols-1:	# if at end of row
-							across[curr_across_num].update( {"end":(r,c)} )
+							self.across[curr_across_num].update( {"end":(r,c)} )
 
 					elif on_blank_across_squares == False:
 						on_blank_across_squares = True
 						clue_enum += 1
-						across.update( {clue_enum: {"start":(r,c)}} )
+						self.across.update( {clue_enum: {"start":(r,c)}} )
 						curr_across_num = clue_enum
 
 					if on_blank_down_squares == False and (r,c) not in checked_down_squares:
 						# Now proceed through the column dimension first
 
 						# If down word doesn't start at same square as across word, increment the clue number
-						if (r,c) != across[curr_across_num]["start"]:
+						if (r,c) != self.across[curr_across_num]["start"]:
 							clue_enum += 1
 
-						down.update( {clue_enum: {"start":(r,c)}} )
+						self.down.update( {clue_enum: {"start":(r,c)}} )
 						on_blank_down_squares = True
 						checked_down_squares.append((r,c))
 						r2 = r
 						while on_blank_down_squares:
 							r2+=1
 							if (r2,c) in self.blk_sqs_positions:
-								down[clue_enum].update( {"end":(r2-1,c)} )
+								self.down[clue_enum].update( {"end":(r2-1,c)} )
 								on_blank_down_squares = False
 
 							elif (r2,c) not in self.blk_sqs_positions:
 								checked_down_squares.append((r2,c))
 								if r2 == self.rows-1:	# if at end of column
-									down[clue_enum].update( {"end":(r2,c)} )
+									self.down[clue_enum].update( {"end":(r2,c)} )
 									on_blank_down_squares = False
 								else:
 									continue
 
 				elif (r,c) in self.blk_sqs_positions:
 					if on_blank_across_squares == True:	# Then end the word
-						across[curr_across_num].update( {"end":(r,c-1)} )
+						self.across[curr_across_num].update( {"end":(r,c-1)} )
 						on_blank_across_squares = False
 					elif on_blank_across_squares == False:
 						continue
 
 		# Get length of each word, and append to both the word dict itself as well as a growing dict of word lengths to inform the fill order
-		word_len_dict = {"across":{}, "down":{}}
-		for k in across.keys():
-			wlength = across[k]["end"][1] - ( across[k]["start"][1] - 1 )
-			across[k]["len"] = wlength
-			if wlength not in word_len_dict["across"].keys():
-				word_len_dict["across"].update({wlength:[k]})
-			elif wlength in word_len_dict["across"].keys():
-				word_len_dict["across"][wlength].append(k)
+		self.word_len_dict = {"across":{}, "down":{}}
+		for k in self.across.keys():
+			wlength = self.across[k]["end"][1] - ( self.across[k]["start"][1] - 1 )
+			self.across[k]["len"] = wlength
+			if wlength not in self.word_len_dict["across"].keys():
+				self.word_len_dict["across"].update({wlength:[k]})
+			elif wlength in self.word_len_dict["across"].keys():
+				self.word_len_dict["across"][wlength].append(k)
 
-		for k in down.keys():
-			wlength = down[k]["end"][0] - ( down[k]["start"][0] - 1 )
-			down[k]["len"] = wlength
-			if wlength not in word_len_dict["down"].keys():
-				word_len_dict["down"].update({wlength:[k]})
-			elif wlength in word_len_dict["down"].keys():
-				word_len_dict["down"][wlength].append(k)
+		for k in self.down.keys():
+			wlength = self.down[k]["end"][0] - ( self.down[k]["start"][0] - 1 )
+			self.down[k]["len"] = wlength
+			if wlength not in self.word_len_dict["down"].keys():
+				self.word_len_dict["down"].update({wlength:[k]})
+			elif wlength in self.word_len_dict["down"].keys():
+				self.word_len_dict["down"][wlength].append(k)
 
-		print("Across",across)
-		print("Down",down)
-		print("Word length dict",word_len_dict)
+		print("Across",self.across)
+		print("Down",self.down)
+		print("Word length dict",self.word_len_dict)
 
-		return across, down, word_len_dict
+		return self.across, self.down, self.word_len_dict
 
 
 	def refresh_word_len_dict(self, wd_len, wd_num_filled, direction):
 		"""
 		"""
 
-		print(self.word_len_dict[direction])
+		# print(self.word_len_dict[direction])
 
 		idx = self.word_len_dict[direction][wd_len].index(wd_num_filled)
 		self.word_len_dict[direction][wd_len].pop(idx)
@@ -303,9 +304,35 @@ class CrosswordPuzzle:
 		if len(self.word_len_dict[direction][wd_len]) == 0:
 			self.word_len_dict[direction].pop(wd_len)
 
-		print(self.word_len_dict[direction])
+		# print(self.word_len_dict[direction])
 
 		return
+
+
+	def fill_word(self, grid_state, word_id_to_fill, word_to_fill_grid_with, direction):
+		"""
+		"""
+
+		if direction == 'across':
+			# use for across only
+			row = self.across[word_id_to_fill]['start'][0]
+			c1 = self.across[word_id_to_fill]['start'][1]
+			c2 = self.across[word_id_to_fill]['end'][1] + 1
+
+			for idx,letter in enumerate(word_to_fill_grid_with):
+				grid_state[row][c1+idx] = letter
+
+		if direction == 'down':
+			# use for down only
+			col = self.down[word_id_to_fill]['start'][1]
+			r1 = self.down[word_id_to_fill]['start'][0]
+			r2 = self.down[word_id_to_fill]['end'][0] + 1
+
+			for idx,letter in enumerate(word_to_fill_grid_with):
+				grid_state[r1+idx][col] = letter
+
+		return grid_state
+
 
 
 	def update_across_and_down_with_partial_grid(self, grid_state): # updated across and down dicts with partial words to check possible validity
@@ -367,8 +394,9 @@ class CrosswordPuzzle:
 			num_possible_words_to_fill += len(w_choices)
 
 		all_possible_words_by_curr_word = {}
-		for i in range(len(curr_grid_word_patterns)):
-			curr_word = curr_grid_word_patterns[i]
+		# for i in range(len(curr_grid_word_patterns)):
+			# curr_word = curr_grid_word_patterns[i]
+		for curr_word in curr_grid_word_patterns:
 			curr_word_len = len(curr_word)
 			curr_word_choices = {k for k in all_word_choices[curr_word_len].keys() if re.match(curr_word, k)}
 			# curr_word_choices = {k:v for k,v in all_word_choices[curr_word_len].items() if re.match(curr_word, k)}
@@ -379,13 +407,28 @@ class CrosswordPuzzle:
 
 		print("Total number of possible word choices so far:", num_possible_words_to_fill)
 
+		minimum_num_possible_fills = 1000 # arbitrarily chosen number of possible fills, to compare number possibilities for each partial word of the puzzle
+		most_restricted_word_to_fill = None # initialize variable
+		for curr_word in all_possible_words_by_curr_word.keys():
+			num_choices_for_curr_word = len(all_possible_words_by_curr_word[curr_word])
+			if num_choices_for_curr_word == 0:
+				print("NO FILL POSSIBLE FOR WORD,", curr_word)
+				most_restricted_word_to_fill = curr_word
+				break
+			elif num_choices_for_curr_word < minimum_num_possible_fills:
+				minimum_num_possible_fills = num_choices_for_curr_word
+				most_restricted_word_to_fill = curr_word
+			else:
+				continue
+
 
 		# if num_possible_words_to_fill < 100:
 			# pprint.pprint(all_possible_words_by_curr_word)
 			# print([v for k,v in all_word_choices.items()])
 
 		# TO ADD: Return the whole dictionary as already done here, but also return which across or down word to fill next based on having the fewest possible fills
-		return all_word_choices
+		# return all_word_choices
+		return all_possible_words_by_curr_word, most_restricted_word_to_fill
 
 
 	def is_fill_of_rest_of_grid_possible(self, grid_state, word_dict): # return bool
@@ -440,78 +483,80 @@ class CrosswordPuzzle:
 		across_flag = True
 
 		while '_' in G:
+
+			# TO ADD: May want to fill longest words first (even if at first they might have more possibilities than shorter words...say, for the first 1/5 of the grid do it this way...?)
+
 			try:
 				# First, choose the longest across word length to fill
+
 				if across_flag:
 					self.update_across_and_down_with_partial_grid(G)
-					max_word_len = max(self.word_len_dict['across'].keys())
-					word_to_fill = choice(self.word_len_dict['across'][max_word_len])
-					print("Across word to fill", word_to_fill, self.across[word_to_fill])
+					# word_len_to_fill = max(self.word_len_dict['across'].keys())
+					# word_id_num_to_fill = choice(self.word_len_dict['across'][word_len_to_fill])
+					print("Across word to fill", word_id_num_to_fill, self.across[word_id_num_to_fill])
 
-					# use for across only
-					row = self.across[word_to_fill]['start'][0]
-					c1 = self.across[word_to_fill]['start'][1]
-					c2 = self.across[word_to_fill]['end'][1] + 1
+					all_word_choices_by_part_word, most_limited_word = self.gather_all_possible_words(G, word_dict)
 
-					all_word_choices = self.gather_all_possible_words(G, word_dict)
-					w = choice(list(all_word_choices[max_word_len].keys()))
-					clue = choice(all_word_choices[max_word_len][w])
+					word_id_num_to_fill = choice([k for k in self.across.keys() if self.across[k]['word_temp'] == most_limited_word])
+					word_id_num_to_fill = choice([k for k in self.down.keys() if self.down[k]['word_temp'] == most_limited_word])
+					word_len_to_fill = len(most_limited_word)
+
+
+					print(word_dir, "word to fill:", word_id_num_to_fill, most_limited_word)
+
+
+
+					w = choice(list(all_word_choices_by_part_word[self.across[word_id_num_to_fill]['word_temp']]))
+					clue = choice(word_dict[word_len_to_fill][w])
 					print(w, clue)
 
-					# w_choices = {k:v for k,v in word_dict[max_word_len].items() if re.match(self.across[word_to_fill]['word_temp'], k)}
+					# w_choices = {k:v for k,v in word_dict[word_len_to_fill].items() if re.match(self.across[word_id_num_to_fill]['word_temp'], k)}
 					# w = choice(list(w_choices.keys()))
 
 					# Lambda function for ranking word use frequency
-					# sorted_words_by_freq = sorted(word_dict[max_word_len].items(), key = lambda item: len(item[1]),reverse = True )
+					# sorted_words_by_freq = sorted(word_dict[word_len_to_fill].items(), key = lambda item: len(item[1]),reverse = True )
 					# w = choice(sorted_words_by_freq[0:100])[0]
 
-					for idx,letter in enumerate(w):
-						G[row][c1+idx] = letter
+					G = self.fill_word(G, word_id_num_to_fill, w, 'across')
 
 					across_flag = False
 
-					self.refresh_word_len_dict(max_word_len, word_to_fill, 'across')
-					print(self.across, self.down)
+					self.refresh_word_len_dict(word_len_to_fill, word_id_num_to_fill, 'across')
+					# print(self.across, self.down)
 					print(G)
 
 				elif not across_flag:
 					self.update_across_and_down_with_partial_grid(G)
-					max_word_len = max(self.word_len_dict['down'].keys())
-					word_to_fill = choice(self.word_len_dict['down'][max_word_len])
-					print("Down word to fill", word_to_fill, self.down[word_to_fill])
+					word_len_to_fill = max(self.word_len_dict['down'].keys())
+					word_id_num_to_fill = choice(self.word_len_dict['down'][word_len_to_fill])
+					print("Down word to fill", word_id_num_to_fill, self.down[word_id_num_to_fill])
 
-					# use for down only
-					col = self.down[word_to_fill]['start'][1]
-					r1 = self.down[word_to_fill]['start'][0]
-					r2 = self.down[word_to_fill]['end'][0] + 1
-
-					all_word_choices = self.gather_all_possible_words(G, word_dict)
-					w = choice(list(all_word_choices[max_word_len].keys()))
-					clue = choice(all_word_choices[max_word_len][w])
+					all_word_choices_by_part_word, most_limited_word = self.gather_all_possible_words(G, word_dict)
+					w = choice(list(all_word_choices_by_part_word[self.down[word_id_num_to_fill]['word_temp']]))
+					clue = choice(word_dict[word_len_to_fill][w])
 					print(w, clue)
 
-					# w_choices = {k:v for k,v in word_dict[max_word_len].items() if re.match(self.down[word_to_fill]['word_temp'], k)}
+					# w_choices = {k:v for k,v in word_dict[word_len_to_fill].items() if re.match(self.down[word_id_num_to_fill]['word_temp'], k)}
 					# w = choice(list(w_choices.keys()))
 
 					# Lambda function for ranking word use frequency
-					# sorted_words_by_freq = sorted(word_dict[max_word_len].items(), key = lambda item: len(item[1]),reverse = True )
+					# sorted_words_by_freq = sorted(word_dict[word_len_to_fill].items(), key = lambda item: len(item[1]),reverse = True )
 					# w = choice(sorted_words_by_freq[0:100])[0]
 
-					for idx,letter in enumerate(w):
-						G[r1+idx][col] = letter
-
+					G = self.fill_word(G, word_id_num_to_fill, w, 'down')
 					across_flag = True
 
-					self.refresh_word_len_dict(max_word_len, word_to_fill, 'down')
-					print(self.across, self.down)
+					self.refresh_word_len_dict(word_len_to_fill, word_id_num_to_fill, 'down')
+					# print(self.across, self.down)
 					print(G)
 
 			except Exception as err:
-				print("Exception raised:", err)
-				print("Re-attempting fill process...")
+				print("\nException raised:", err)
+				print("Re-attempting fill process...\n")
 				G = copy.deepcopy(self.empty_grid)
+				self.gather_across_and_down_word_spaces()
 				across_flag = True
-				sleep(3)
+				# sleep(3)
 				continue
 
 		exit()
