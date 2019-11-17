@@ -17,7 +17,7 @@ from multiprocessing import Pool
 
 def main():
 
-	grid_dimensions = (5, 5)	# Number rows and columns in crossword puzzle grid
+	grid_dimensions = (7, 7)	# Number rows and columns in crossword puzzle grid
 	black_square_density = 0.13	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
@@ -25,17 +25,19 @@ def main():
 	print(xw_puzzle.empty_grid)
 
 	global main_word_corpus
-	# main_word_corpus = read_word_corpus(['./dict_sources/wordnet/index.noun.processed.txt'], grid_dimensions)
-	word_corpus_files = ['./dict_sources/wordnet/index.noun.processed.txt',
+	word_corpus_files = [
+						'./dict_sources/wordnet/index.noun.processed.txt',
 						'./dict_sources/wordnet/index.adj.processed.txt',
 						'./dict_sources/wordnet/index.verb.processed.txt',
 						'./dict_sources/wordnet/index.adv.processed.txt',
-						'./dict_sources/nyt-crossword-master/clues_fixed.txt']
+						'./dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
+						# './dict_sources/SCOWL/scowl-2019.10.06/final/american-and-english.processed.txt',
+						'./dict_sources/nyt-crossword-master/clues_fixed.txt'
+						]
 	main_word_corpus = read_word_corpus(word_corpus_files, grid_dimensions)
 	size_of_corp = sum(len(main_word_corpus[k]) for k in main_word_corpus )
 	print(size_of_corp)
 
-	# main_word_corpus = read_word_corpus('./dict_sources/nyt-crossword-master/clues_fixed.txt', grid_dimensions)
 	# main_word_corpus = sort_word_dic(main_word_corpus) # Sort main_word_corpus by its length of the hints
 
 	# Fill grid using recursive function:
@@ -88,12 +90,13 @@ class CrosswordPuzzle:
 
 		## Call main methods upon initialization
 		# self.empty_grid, self.blk_sqs_positions = self.make_empty_grid()
-		self.make_empty_grid()
 		# self.across, self.down = self.initialize_across_and_down_word_spaces()
-		self.initialize_across_and_down_word_spaces()
-		self.grid = copy.deepcopy(self.empty_grid)
 		self.fill_process_started = False
 		self.list_of_word_coordinates_filled = []	# A growing list of coordinates for each word filled in the grid, to allow for easier access to backtrack word fill if necessary.
+
+		self.make_empty_grid()
+		self.initialize_across_and_down_word_spaces()
+		self.grid = copy.deepcopy(self.empty_grid)
 
 		# self.fill_grid()
 
@@ -117,9 +120,12 @@ class CrosswordPuzzle:
 		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
 		# G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
 		# self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
-		# self.empty_grid = copy.deepcopy(G)
-		# # return self.empty_grid, self.blk_sqs_positions
-		# return
+		self.blk_sqs_positions = [(0,0),(1,0),(0,1),(0,5),(0,6),(1,6),(5,0),(6,0),(6,1),(6,6),(5,6),(6,5)]
+		for p in self.blk_sqs_positions:
+			G[p]='.'
+		self.empty_grid = copy.deepcopy(G)
+		# return self.empty_grid, self.blk_sqs_positions
+		return
 
 		# Below is random generator -- for now use predetermined grid above.
 		# When ready, remove 4 lines above
@@ -296,6 +302,9 @@ class CrosswordPuzzle:
 			self.down[k]['clue'] = None
 			self.down[k]['answer'] = None
 
+		self.fill_process_started = False
+		self.list_of_word_coordinates_filled = []
+
 		print("Across",self.across)
 		print("Down",self.down)
 
@@ -446,36 +455,6 @@ class CrosswordPuzzle:
 		return True
 
 
-	def gather_first_set_of_possible_words(self):
-		"""
-		 Method to gather the FIRST of possible words that can be filled into the starting state of the grid,
-		"""
-		global main_word_corpus
-
-		curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp']] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp']]
-		curr_grid_word_patterns = list(set(curr_grid_word_patterns))	# Don't repeat for identical word patterns
-		print(curr_grid_word_patterns)
-
-		curr_grid_word_regex_compiled_dict = {}
-		for wp in curr_grid_word_patterns:
-			if len(wp) not in curr_grid_word_regex_compiled_dict.keys():
-				curr_grid_word_regex_compiled_dict.update({len(wp):[re.compile(wp).match]})
-			else:
-				curr_grid_word_regex_compiled_dict[len(wp)].append(re.compile(wp).match)
-
-		num_possible_words_to_fill = 0
-		all_possible_word_choices_by_len_dict = {}
-		for wlen in curr_grid_word_regex_compiled_dict.keys():
-			w_choices = [wi for wi in main_word_corpus[wlen] if any ( regex_match(wi) for regex_match in curr_grid_word_regex_compiled_dict[wlen] )]
-			all_possible_word_choices_by_len_dict.update( {wlen : w_choices} )
-			print("Number possible words of length,",wlen,"=", len(w_choices))
-			num_possible_words_to_fill += len(w_choices)
-
-		print("Total number of possible word choices so far:", num_possible_words_to_fill)
-
-		return all_possible_word_choices_by_len_dict	#, most_restricted_word_to_fill
-
-
 	def gather_all_possible_words(self, word_dict, count_only: bool):
 		"""
 		NEW Method to gather the number of possible words that can be filled into the current state of the grid,
@@ -566,11 +545,10 @@ class CrosswordPuzzle:
 			# penalty_count = 0
 			# return self.fill_grid_recursively(main_word_corpus, penalty_count)
 
-			print("Re-attempting fill process...\n")
+			print("\nPENALTY LMIT REACHED: Re-attempting fill process from scratch...\n")
 			self.grid = copy.deepcopy(self.empty_grid)
 			self.initialize_across_and_down_word_spaces()
 			# self.fill_process_started = False
-			# # OR set grid to -2 states ago...
 			penalty_count = 0
 			return self.fill_grid_recursively(main_word_corpus, penalty_count)
 
@@ -604,7 +582,7 @@ class CrosswordPuzzle:
 
 			word_id_num_to_fill = choice(most_limited_word_ids)
 			# reset max of k each time so not repeating the same word (and try to turn off replacement)
-			wds = choices(possible_word_dict_by_pattern[most_limited_word], k=20)	# choose 100 at a time!!!! then do for loop down below...
+			wds = choices(possible_word_dict_by_pattern[most_limited_word], k=50)	# choose 100 at a time!!!! then do for loop down below...
 			wds = set(list(wds)) # Only check unique words
 			print(wds)
 			# w = choice(possible_word_dict_by_pattern[most_limited_word])
@@ -632,6 +610,12 @@ class CrosswordPuzzle:
 			most_possible_new_words_allowed = 0
 			for w in wds:
 				# print(self.grid)
+				if len(self.list_of_word_coordinates_filled) == 0:
+					# If choosing first word, likely won't affect the number of next possible words
+					# since there will still be another fully-blank row or column of cells. So for now,
+					# just pick one at random to speed things up.
+					most_flexible_word = w
+					break
 				if self.fill_word(word_id_num_to_fill, w, word_dir):
 					# print(self.grid)
 					# Get number of possible words
