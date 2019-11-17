@@ -17,8 +17,8 @@ from multiprocessing import Pool
 
 def main():
 
-	grid_dimensions = (7, 7)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.15	# [Maximum] Fraction of squares that will be black
+	grid_dimensions = (11,11)	# Number rows and columns in crossword puzzle grid
+	black_square_density = 0.2	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
@@ -61,6 +61,7 @@ class CrosswordPuzzle:
 			* Using union-find algorithm to check this
 		- All white squares must be part of BOTH an Across and Down crossing
 			* There must be at least 1 white square to the left or right, AND at least 1 white sqauare to the top or bottom
+		- There should be at least one black square in each row and each column
 	"""
 
 	def __init__(self, dims: tuple, density: float):
@@ -137,6 +138,7 @@ class CrosswordPuzzle:
 			self.blk_sqs_positions.append((center, center))
 
 		rand_nums,rand_pool = int(self.num_blk_sqs / 2), [i for i in range(0,int((self.num_squares - 1) / 2))]
+		G,rand_nums = self.fill_at_least_one(G,rand_nums)
 		while(rand_nums > 0):
 			rand_nums -= 1
 			temp = choice(rand_pool)
@@ -152,6 +154,42 @@ class CrosswordPuzzle:
 
 		# return self.empty_grid, self.blk_sqs_positions
 		return
+
+
+	def fill_at_least_one(self,G,rand_nums):
+		'''
+		To obey rule 4, we fisrt generalize one black square in each row and each column
+		'''
+		col_list = [i for i in range(0,self.cols)]
+		pool = [i for i in range(0,self.cols)]
+		center = int(self.rows/2)
+		for row in range(0,int(self.rows/2)+1):
+			rand_nums -= 1
+			temp = choice(pool) # choose a col randomly
+			while(self.check_valid(G,row*self.cols+temp) == False):
+				temp = choice(pool)
+			if temp in col_list:
+				col_list.remove(temp)
+			if 2 * center - temp in col_list:
+				col_list.remove(2*center-temp)
+			self.blk_sqs_positions.append((row,temp))
+			G[row][temp] = '.'
+			self.blk_sqs_positions.append((center * 2 - row,center * 2 - temp))  # make the board symmetric
+			G[center * 2 - row][center * 2 - temp] = '.'
+
+		for col in col_list:
+			rand_nums -= 1
+			if rand_nums == 0:
+				return G,rand_nums
+			temp = choice(pool) # choose a row randomly
+			while(self.check_valid(G,temp*self.cols+col) == False):
+				temp = choice(pool)
+			self.blk_sqs_positions.append((temp,col))
+			G[temp][col] = '.'
+			self.blk_sqs_positions.append((center * 2 - temp,center * 2 - col))  # make the board symmetric
+			G[center * 2 - temp][center * 2 - col] = '.'
+		return G,rand_nums
+
 
 
 	def check_valid(self,G,next_move):
