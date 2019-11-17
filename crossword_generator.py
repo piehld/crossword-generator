@@ -12,13 +12,18 @@ from time import sleep
 import re
 import pprint
 from multiprocessing import Pool
+import sys
+import os
 
-
+def restart_program():
+    print("Rerun the program")
+    python = sys.executable   
+    os.execl(python, python, * sys.argv) 
 
 def main():
 
-	grid_dimensions = (11,11)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.2	# [Maximum] Fraction of squares that will be black
+	grid_dimensions = (7,7)	# Number rows and columns in crossword puzzle grid
+	black_square_density = 0.15	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
@@ -138,11 +143,15 @@ class CrosswordPuzzle:
 			self.blk_sqs_positions.append((center, center))
 
 		rand_nums,rand_pool = int(self.num_blk_sqs / 2), [i for i in range(0,int((self.num_squares - 1) / 2))]
-		G,rand_nums = self.fill_at_least_one(G,rand_nums)
+		#G,rand_nums = self.fill_at_least_one(G,rand_nums)
 		while(rand_nums > 0):
 			rand_nums -= 1
 			temp = choice(rand_pool)
+			flag = 0
 			while(self.check_valid(G,temp) == False):
+				flag += 1
+				if flag >=100:
+					restart_program()
 				temp = choice(rand_pool)
 			rand_pool.remove(temp)
 			self.blk_sqs_positions.append((int(temp/self.cols),temp % self.rows))
@@ -555,6 +564,8 @@ class CrosswordPuzzle:
 
 		if not '_' in self.grid:
 			self.filled_grid = copy.deepcopy(self.grid)
+			print("Across",self.across)
+			print("Down",self.down)
 			return self.filled_grid
 
 		if penalty_count == 10:
