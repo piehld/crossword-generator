@@ -18,11 +18,12 @@ from multiprocessing import Pool
 def main():
 
 	grid_dimensions = (7, 7)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.13	# [Maximum] Fraction of squares that will be black
+	black_square_density = 0.15	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
 	print(xw_puzzle.empty_grid)
+	print(xw_puzzle.blk_sqs_positions)
 
 	global main_word_corpus
 	word_corpus_files = [
@@ -84,7 +85,7 @@ class CrosswordPuzzle:
 			self.ifcenter_black = True
 
 		self.empty_grid = None
-		self.blk_sqs_positions = None
+		self.blk_sqs_positions = []
 		self.across, self.down = None, None
 		self.filled_grid = None
 
@@ -120,12 +121,12 @@ class CrosswordPuzzle:
 		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
 		# G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
 		# self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
-		self.blk_sqs_positions = [(0,0),(1,0),(0,1),(0,5),(0,6),(1,6),(5,0),(6,0),(6,1),(6,6),(5,6),(6,5)]
-		for p in self.blk_sqs_positions:
-			G[p]='.'
-		self.empty_grid = copy.deepcopy(G)
-		# return self.empty_grid, self.blk_sqs_positions
-		return
+		# self.blk_sqs_positions = [(0,0),(1,0),(0,1),(0,5),(0,6),(1,6),(5,0),(6,0),(6,1),(6,6),(5,6),(6,5)]
+		# for p in self.blk_sqs_positions:
+		# 	G[p]='.'
+		# self.empty_grid = copy.deepcopy(G)
+		# # return self.empty_grid, self.blk_sqs_positions
+		# return
 
 		# Below is random generator -- for now use predetermined grid above.
 		# When ready, remove 4 lines above
@@ -133,9 +134,9 @@ class CrosswordPuzzle:
 		center = int(self.rows/2)
 		if self.ifcenter_black == True:
 			G[center][center] = '.'
+			self.blk_sqs_positions.append((center, center))
 
 		rand_nums,rand_pool = int(self.num_blk_sqs / 2), [i for i in range(0,int((self.num_squares - 1) / 2))]
-		self.blk_sqs_positions = []
 		while(rand_nums > 0):
 			rand_nums -= 1
 			temp = choice(rand_pool)
@@ -144,7 +145,7 @@ class CrosswordPuzzle:
 			rand_pool.remove(temp)
 			self.blk_sqs_positions.append((int(temp/self.cols),temp % self.rows))
 			G[int(temp/self.cols)][temp % self.rows] = '.'
-			self.blk_sqs_positions.append((center * 2 - int(temp/self.cols),center * 2 - temp % self.rows))  # make the board symmetric
+			self.blk_sqs_positions.append((center * 2 - int(temp/self.cols),center * 2 - (temp % self.rows)))  # make the board symmetric
 			G[center * 2 - int(temp/self.cols)][center * 2 - (temp % self.rows)] = '.'
 
 		self.empty_grid = copy.deepcopy(G)
@@ -318,7 +319,6 @@ class CrosswordPuzzle:
 		"""
 
 		word_coords = []
-		# print(self.grid)
 
 		if direction == 'across':
 			# use for across only
@@ -330,12 +330,6 @@ class CrosswordPuzzle:
 				self.grid[row][c1+idx] = letter
 				if self.across[word_id_to_fill]['word_temp'][idx] != letter:
 					word_coords.append((row,c1+idx))
-
-			# for idx,letter in enumerate(self.across[word_id_to_fill]['word_temp']):
-			# 	if letter != '.':
-			# 		word_coords.pop(idx)
-			# print(self.down[word_id_to_fill]['word_temp'])
-			# print(word_coords)
 
 			self.list_of_word_coordinates_filled.append((word_id_to_fill, direction, word_coords))
 
@@ -357,12 +351,6 @@ class CrosswordPuzzle:
 				if self.down[word_id_to_fill]['word_temp'][idx] != letter:
 					word_coords.append((r1+idx,col))
 
-			# for idx,letter in enumerate(self.down[word_id_to_fill]['word_temp']):
-			# 	if letter != '.':
-			# 		word_coords.pop(idx)
-			# print(self.down[word_id_to_fill]['word_temp'])
-			# print(word_coords)
-
 			self.list_of_word_coordinates_filled.append((word_id_to_fill, direction, word_coords))
 
 			# Also update the "word_temp" attribute for the filled word:
@@ -370,9 +358,6 @@ class CrosswordPuzzle:
 
 			# Now specify the transverse direction of words to update the single letters for:
 			direction_of_words_to_update = 'across'
-
-		# print(self.grid)
-		# print(self.list_of_word_coordinates_filled)
 
 		# Now update all affected across & down words in self, and check if real words
 		if self.update_across_and_down_with_partial_grid(direction_of_words_to_update):
@@ -391,15 +376,6 @@ class CrosswordPuzzle:
 		# Clear letters from grid
 		for coord in word_coords_to_clear:
 			self.grid[coord] = '_'
-
-		# Clear temp_word from across or down attributes
-		# if direction == 'across':
-		# 	self.across[word_id_to_remove]['word_temp'] = '.' * len(word_coords_to_clear)
-		# 	direction_of_words_to_update = 'down'	# Specify the transverse direction of words to update the single letters for
-        #
-		# if direction == 'down':
-		# 	self.down[word_id_to_remove]['word_temp'] = '.' * len(word_coords_to_clear)
-		# 	direction_of_words_to_update = 'across'	# Specify the transverse direction of words to update the single letters for
 
 		# Update the across or down attributes of words in the transverse direction
 		self.update_across_and_down_with_partial_grid('across')
@@ -488,14 +464,22 @@ class CrosswordPuzzle:
 			num_possible_words_to_fill += len(w_choices)
 
 		print("Total number of possible word choices so far:", num_possible_words_to_fill)
+		# if count_only:
+		# 	return num_possible_words_to_fill
+
 		if count_only:
+			for wp in curr_grid_word_patterns:
+				if len([k for k in all_possible_word_choices_by_len_dict[len(wp)] if re.compile(wp).match(k)]) == 0:
+					print("NO FILL POSSIBLE FOR WORD PATTERN,", wp)
+					return 0
 			return num_possible_words_to_fill
 
-		all_possible_word_choices_by_pattern_dict = {}
-		for wp in curr_grid_word_patterns:
-			wp_len = len(wp)
-			curr_word_choices = [k for k in all_possible_word_choices_by_len_dict[wp_len] if re.compile(wp).match(k)]
-			all_possible_word_choices_by_pattern_dict.update({wp:curr_word_choices})
+		else:
+			all_possible_word_choices_by_pattern_dict = {}
+			for wp in curr_grid_word_patterns:
+				wp_len = len(wp)
+				curr_word_choices = [k for k in all_possible_word_choices_by_len_dict[wp_len] if re.compile(wp).match(k)]
+				all_possible_word_choices_by_pattern_dict.update({wp:curr_word_choices})
 
 		minimum_num_possible_fills = 100000 # arbitrarily chosen number of possible fills, to compare number possibilities for each partial word of the puzzle
 		most_restricted_word_to_fill = None # initialize variable
@@ -535,44 +519,16 @@ class CrosswordPuzzle:
 			self.filled_grid = copy.deepcopy(self.grid)
 			return self.filled_grid
 
-		if penalty_count == 5:
-			# print("\nPENALTY LMIT REACHED: Removing last three added words and trying again...\n")
-			# self.remove_last_added_word()
-			# self.remove_last_added_word()
-			# self.remove_last_added_word()
-			# print(self.grid)
-			# # exit()
-			# penalty_count = 0
-			# return self.fill_grid_recursively(main_word_corpus, penalty_count)
-
+		if penalty_count == 10:
 			print("\nPENALTY LMIT REACHED: Re-attempting fill process from scratch...\n")
 			self.grid = copy.deepcopy(self.empty_grid)
 			self.initialize_across_and_down_word_spaces()
-			# self.fill_process_started = False
 			penalty_count = 0
 			return self.fill_grid_recursively(main_word_corpus, penalty_count)
 
-		# if not self.fill_process_started:
-		# 	print("FIRST PASS THROUGH")
-		# 	# Initialize possible_word_dict_by_len varaible with starting dictionary
-		# 	possible_word_dict_by_len = self.gather_first_set_of_possible_words()
-		# 	possible_word_dict = possible_word_dict_by_len
-		# 	self.fill_process_started = True
-		# 	print(possible_word_dict_by_len.keys())
-        #
-		# else:
-		# 	print("PROCEEDING TO FILLING STEP...")
-		# 	pass
-
-
 		# Now do the actual filling part
-		# May need to copy "across" and "down" as well (or the entire Puzzle object all-together), and possible_word_dict...?
-		# starting_grid_state = copy.deepcopy(self.grid)
-		# starting_across_state = copy.deepcopy(self.across)
-		# starting_down_state = copy.deepcopy(self.down)
 		try:
 			possible_word_dict_by_len, possible_word_dict_by_pattern, most_limited_word = self.gather_all_possible_words(main_word_corpus, count_only = False)
-			# possible_word_dict_by_len, possible_word_dict_by_pattern, most_limited_word = self.gather_all_possible_words(possible_word_dict, count_only = False)
 			most_limited_word_ids = [k for k in self.across.keys() if self.across[k]['word_temp'] == most_limited_word]
 			if len(most_limited_word_ids) == 0:
 				most_limited_word_ids = [k for k in self.down.keys() if self.down[k]['word_temp'] == most_limited_word]
@@ -581,8 +537,23 @@ class CrosswordPuzzle:
 				word_dir = 'across'
 
 			word_id_num_to_fill = choice(most_limited_word_ids)
+
+			# If choosing first word or two, choose the longest in the puzzle
+			if len(self.list_of_word_coordinates_filled) < 1:
+				max_word_length = max(self.across[k]['len'] for k in self.across.keys())
+				print(max_word_length)
+				most_limited_word_ids = [k for k in self.across.keys() if self.across[k]['len'] == max_word_length and '.' in self.across[k]['word_temp']]
+				word_dir = 'across'
+				word_id_num_to_fill = choice(most_limited_word_ids)
+				most_limited_word = self.across[word_id_num_to_fill]['word_temp']
+				# print(word_id_num_to_fill)
+				# print(most_limited_word)
+				# print(choices(possible_word_dict_by_pattern[most_limited_word], k=20))
+				# exit()
+
+
 			# reset max of k each time so not repeating the same word (and try to turn off replacement)
-			wds = choices(possible_word_dict_by_pattern[most_limited_word], k=50)	# choose 100 at a time!!!! then do for loop down below...
+			wds = choices(possible_word_dict_by_pattern[most_limited_word], k=20)	# choose 100 at a time!!!! then do for loop down below...
 			wds = set(list(wds)) # Only check unique words
 			print(wds)
 			# w = choice(possible_word_dict_by_pattern[most_limited_word])
@@ -609,7 +580,6 @@ class CrosswordPuzzle:
 			most_flexible_word = None
 			most_possible_new_words_allowed = 0
 			for w in wds:
-				# print(self.grid)
 				if len(self.list_of_word_coordinates_filled) == 0:
 					# If choosing first word, likely won't affect the number of next possible words
 					# since there will still be another fully-blank row or column of cells. So for now,
@@ -617,19 +587,14 @@ class CrosswordPuzzle:
 					most_flexible_word = w
 					break
 				if self.fill_word(word_id_num_to_fill, w, word_dir):
-					# print(self.grid)
 					# Get number of possible words
 					number_possible_new_words = self.gather_all_possible_words(possible_word_dict_by_len, count_only = True)
-					# print(number_possible_new_words)
-					# exit()
 					if number_possible_new_words >= most_possible_new_words_allowed:
 						most_flexible_word = w
 						most_possible_new_words_allowed = number_possible_new_words
 					self.remove_last_added_word()
-					continue
 				else:
 					self.remove_last_added_word()
-					continue
 
 			try:
 				print("  Filling with  ---->  ", most_flexible_word)
@@ -644,11 +609,7 @@ class CrosswordPuzzle:
 
 			print(self.grid)
 
-			# if self.grid:
 			return self.fill_grid_recursively(main_word_corpus, penalty_count)
-			# else:
-				# None	# Basically, cause an exception
-				# self.backtrack(..., main_word_corpus) ****
 
 		except Exception as err:
 			print("\nEXCEPTION:", err)
@@ -664,13 +625,7 @@ class CrosswordPuzzle:
 			# print("Re-attempting fill process...\n")
 			# self.grid = copy.deepcopy(self.empty_grid)
 			# self.initialize_across_and_down_word_spaces()
-			# self.fill_process_started = False
-			# penalty_count += 1
 			# return self.fill_grid_recursively(main_word_corpus, penalty_count)
-
-			# self.grid = copy.deepcopy(starting_grid_state)
-			# self.across = copy.deepcopy(starting_across_state)
-			# self.down = copy.deepcopy(starting_down_state)
 
 
 def word_exists(word_to_check):
