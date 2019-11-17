@@ -115,11 +115,11 @@ class CrosswordPuzzle:
 		# (e.g., cannot have any completely isolated regions, nor any white spaces flanked on either side by black squares).
 
 		# HOWEVER, for testing purposes, we are going to just set all four corners to black squares.
-		G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
-		self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
-		self.empty_grid = copy.deepcopy(G)
-		# return self.empty_grid, self.blk_sqs_positions
-		return
+		# G[0,0], G[4,0], G[0,4], G[4,4] = '.', '.', '.', '.'
+		# self.blk_sqs_positions = [(0,0), (4,0), (0,4), (4,4)]
+		# self.empty_grid = copy.deepcopy(G)
+		# # return self.empty_grid, self.blk_sqs_positions
+		# return
 
 		# Below is random generator -- for now use predetermined grid above.
 		# When ready, remove 4 lines above
@@ -309,6 +309,7 @@ class CrosswordPuzzle:
 		"""
 
 		word_coords = []
+		# print(self.grid)
 
 		if direction == 'across':
 			# use for across only
@@ -318,7 +319,15 @@ class CrosswordPuzzle:
 
 			for idx,letter in enumerate(word_to_fill_grid_with):
 				self.grid[row][c1+idx] = letter
-				word_coords.append((row,c1+idx))
+				if self.across[word_id_to_fill]['word_temp'][idx] != letter:
+					word_coords.append((row,c1+idx))
+
+			# for idx,letter in enumerate(self.across[word_id_to_fill]['word_temp']):
+			# 	if letter != '.':
+			# 		word_coords.pop(idx)
+			# print(self.down[word_id_to_fill]['word_temp'])
+			# print(word_coords)
+
 			self.list_of_word_coordinates_filled.append((word_id_to_fill, direction, word_coords))
 
 			# Also update the "word_temp" attribute for the filled word:
@@ -336,7 +345,15 @@ class CrosswordPuzzle:
 
 			for idx,letter in enumerate(word_to_fill_grid_with):
 				self.grid[r1+idx][col] = letter
-				word_coords.append((r1+idx,col))
+				if self.down[word_id_to_fill]['word_temp'][idx] != letter:
+					word_coords.append((r1+idx,col))
+
+			# for idx,letter in enumerate(self.down[word_id_to_fill]['word_temp']):
+			# 	if letter != '.':
+			# 		word_coords.pop(idx)
+			# print(self.down[word_id_to_fill]['word_temp'])
+			# print(word_coords)
+
 			self.list_of_word_coordinates_filled.append((word_id_to_fill, direction, word_coords))
 
 			# Also update the "word_temp" attribute for the filled word:
@@ -344,6 +361,9 @@ class CrosswordPuzzle:
 
 			# Now specify the transverse direction of words to update the single letters for:
 			direction_of_words_to_update = 'across'
+
+		# print(self.grid)
+		# print(self.list_of_word_coordinates_filled)
 
 		# Now update all affected across & down words in self, and check if real words
 		if self.update_across_and_down_with_partial_grid(direction_of_words_to_update):
@@ -584,8 +604,9 @@ class CrosswordPuzzle:
 
 			word_id_num_to_fill = choice(most_limited_word_ids)
 			# reset max of k each time so not repeating the same word (and try to turn off replacement)
-			wds = choices(possible_word_dict_by_pattern[most_limited_word], k=10)	# choose 100 at a time!!!! then do for loop down below...
+			wds = choices(possible_word_dict_by_pattern[most_limited_word], k=20)	# choose 100 at a time!!!! then do for loop down below...
 			wds = set(list(wds)) # Only check unique words
+			print(wds)
 			# w = choice(possible_word_dict_by_pattern[most_limited_word])
 			if len(wds) == 0:
 				print("Removing last 3 words and trying again...\n")
@@ -631,7 +652,8 @@ class CrosswordPuzzle:
 				self.fill_word(word_id_num_to_fill, most_flexible_word, word_dir)
 			except Exception as err:
 				print("EXCEPTION:", err)
-				print("Removing last 2 words and trying again...\n")
+				print("Removing last 3 words and trying again...\n")
+				self.remove_last_added_word()
 				self.remove_last_added_word()
 				self.remove_last_added_word()
 				penalty_count += 1
