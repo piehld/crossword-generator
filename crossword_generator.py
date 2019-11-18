@@ -14,6 +14,10 @@ import pprint
 from multiprocessing import Pool
 import sys
 import os
+import requests
+import json
+from nltk.corpus import wordnet as wn
+import wikipedia
 
 def restart_program():
     print("Rerun the program")
@@ -22,8 +26,8 @@ def restart_program():
 
 def main():
 
-	grid_dimensions = (7,7)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.15	# [Maximum] Fraction of squares that will be black
+	grid_dimensions = (11,11)	# Number rows and columns in crossword puzzle grid
+	black_square_density = 0.18	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
@@ -48,7 +52,14 @@ def main():
 
 	# Fill grid using recursive function:
 	xw_puzzle.filled_grid =	xw_puzzle.fill_grid_recursively(None, 0)
+	print("Across",xw_puzzle.across)
+	print("Down",xw_puzzle.down)
+	xw_puzzle.generate_hints()
+	print("Across",xw_puzzle.across)
+	print("Down",xw_puzzle.down)
 	print("DONE!")
+
+	xw_puzzle.write_to_json()
 	exit()
 
 	return
@@ -564,8 +575,6 @@ class CrosswordPuzzle:
 
 		if not '_' in self.grid:
 			self.filled_grid = copy.deepcopy(self.grid)
-			print("Across",self.across)
-			print("Down",self.down)
 			return self.filled_grid
 
 		if penalty_count == 10:
@@ -675,6 +684,109 @@ class CrosswordPuzzle:
 			# self.grid = copy.deepcopy(self.empty_grid)
 			# self.initialize_across_and_down_word_spaces()
 			# return self.fill_grid_recursively(main_word_corpus, penalty_count)
+
+	def generate_hints(self):
+		for key in self.across:
+			word = self.across[key]['word_temp']
+			url = "https://dictionaryapi.com/api/v3/references/ithesaurus/json/" + word + "?key=a0c37a49-8082-4e6e-984e-1a1275ba3c03"
+			response = json.loads(requests.get(url).text)
+			
+			if response and isinstance(response[0],dict): # If it can be found in the Merriam Webster Dictionary, we use the definition
+				self.across[key]['clue'] = response[0]['def'][0]['sseq'][0][0][1]['dt'][0][1]
+				continue
+
+			if wikipedia.search(word) != []:
+				if word == wikipedia.search(word)[0].upper():# If it can be used as search keyword
+					try:
+						self.across[key]['clue'] = wikipedia.page(wikipedia.search(word)[0]).summary.split(".")[0].replace(wikipedia.search(word)[0],"___")
+						continue
+					except wikipedia.DisambiguationError as e:
+						pass
+				for title in wikipedia.search(word):
+					if word in title.upper() and word!=title.upper():
+						self.across[key]['clue'] = title.upper().replace(word,"_____")
+						break
+			
+			if self.across[key]['clue'] != None:
+				continue
+
+			if wn.synsets(word) != []:# Then try NLTK to find if there are synonyms
+				synonym_list = wn.synsets(word)
+				for idx in range(0,len(synonym_list)):
+					synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
+				self.across[key]['clue'] = ",".join(set(synonym_list))
+				continue
+		
+			else:
+				self.across[key]['clue'] = "Mystery"
+
+		for key in self.down:
+			word = self.down[key]['word_temp']
+			url = "https://dictionaryapi.com/api/v3/references/ithesaurus/json/" + word + "?key=a0c37a49-8082-4e6e-984e-1a1275ba3c03"
+			response = json.loads(requests.get(url).text)
+			if response and isinstance(response[0],dict): # If it can be found in the Merriam Webster Dictionary, we use the definition
+				self.down[key]['clue'] = response[0]['def'][0]['sseq'][0][0][1]['dt'][0][1]
+				continue
+			if wikipedia.search(word) != []:
+				if word == wikipedia.search(word)[0].upper():# If it can be used as search keyword
+					try:
+						self.down[key]['clue'] = wikipedia.page(wikipedia.search(word)[0]).summary.split(".")[0].replace(wikipedia.search(word)[0],"___")
+						continue
+					except wikipedia.DisambiguationError as e:
+						pass
+				for title in wikipedia.search(word):
+					if word in title.upper() and word!= title.upper():
+						self.down[key]['clue'] = title.upper().replace(word,"_____")
+						break
+			
+			if self.down[key]['clue'] != None:
+				continue			
+			
+			if wn.synsets(word) != []:# Then try NLTK to find if there are synonyms
+				synonym_list = wn.synsets(word)
+				for idx in range(0,len(synonym_list)):
+					synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
+				self.down[key]['clue'] = ",".join(set(synonym_list))
+				continue
+		
+			else:
+				self.down[key]['clue'] = "Mystery"
+		
+
+		return
+
+
+
+	def write_to_json(self):
+		res = []
+		for key in self.across.keys():
+			dic = {}
+			dic["clue"] = self.across[key]["clue"]
+			dic["answer"] = self.across[key]["word_temp"]
+			dic["position"] = key
+			dic["orientation"] = "across"
+			dic["startx"] = self.across[key]["start"][1]+1
+			dic["starty"] = self.across[key]["start"][0]+1
+			res.append(dic)
+
+		for key in self.down.keys():
+			dic = {}
+			dic["clue"] = self.down[key]["clue"]
+			dic["answer"] = self.down[key]["word_temp"]
+			dic["position"] = key
+			dic["orientation"] = "down"
+			dic["startx"] = self.down[key]["start"][1]+1
+			dic["starty"] = self.down[key]["start"][0]+1
+			res.append(dic)
+
+		
+		json_str = json.dumps(res, indent=4)
+		with open('data.json','w') as f:
+			f.write(json_str)
+		return
+
+
+
 
 
 def word_exists(word_to_check):
