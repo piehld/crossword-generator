@@ -20,14 +20,14 @@ from nltk.corpus import wordnet as wn
 import wikipedia
 
 def restart_program():
-    print("Rerun the program")
-    python = sys.executable   
-    os.execl(python, python, * sys.argv) 
+    print("Reattempting random blank grid generation...")
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
 
 def main():
 
 	grid_dimensions = (11,11)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.18	# [Maximum] Fraction of squares that will be black
+	black_square_density = 0.25	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
@@ -502,7 +502,14 @@ class CrosswordPuzzle:
 
 		"""
 
-		curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp']] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp']]
+		if count_only:
+			curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp'] and len(set(self.across[k]['word_temp'])) > 1] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp'] and len(set(self.down[k]['word_temp'])) > 1]
+			print("GATHERING LIMITED LIST of length:", len(curr_grid_word_patterns))
+
+		else:
+			curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp']] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp']]
+			print("GATHERING FULL LIST of length:", len(curr_grid_word_patterns))
+
 		curr_grid_word_patterns = list(set(curr_grid_word_patterns))	# Don't repeat for identical word patterns
 		print(curr_grid_word_patterns)
 
@@ -690,7 +697,7 @@ class CrosswordPuzzle:
 			word = self.across[key]['word_temp']
 			url = "https://dictionaryapi.com/api/v3/references/ithesaurus/json/" + word + "?key=a0c37a49-8082-4e6e-984e-1a1275ba3c03"
 			response = json.loads(requests.get(url).text)
-			
+
 			if response and isinstance(response[0],dict): # If it can be found in the Merriam Webster Dictionary, we use the definition
 				self.across[key]['clue'] = response[0]['def'][0]['sseq'][0][0][1]['dt'][0][1]
 				continue
@@ -706,7 +713,7 @@ class CrosswordPuzzle:
 					if word in title.upper() and word!=title.upper():
 						self.across[key]['clue'] = title.upper().replace(word,"_____")
 						break
-			
+
 			if self.across[key]['clue'] != None:
 				continue
 
@@ -716,7 +723,7 @@ class CrosswordPuzzle:
 					synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
 				self.across[key]['clue'] = ",".join(set(synonym_list))
 				continue
-		
+
 			else:
 				self.across[key]['clue'] = "Mystery"
 
@@ -738,20 +745,20 @@ class CrosswordPuzzle:
 					if word in title.upper() and word!= title.upper():
 						self.down[key]['clue'] = title.upper().replace(word,"_____")
 						break
-			
+
 			if self.down[key]['clue'] != None:
-				continue			
-			
+				continue
+
 			if wn.synsets(word) != []:# Then try NLTK to find if there are synonyms
 				synonym_list = wn.synsets(word)
 				for idx in range(0,len(synonym_list)):
 					synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
 				self.down[key]['clue'] = ",".join(set(synonym_list))
 				continue
-		
+
 			else:
 				self.down[key]['clue'] = "Mystery"
-		
+
 
 		return
 
@@ -779,7 +786,7 @@ class CrosswordPuzzle:
 			dic["starty"] = self.down[key]["start"][0]+1
 			res.append(dic)
 
-		
+
 		json_str = json.dumps(res, indent=4)
 		with open('data.json','w') as f:
 			f.write(json_str)
