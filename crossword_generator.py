@@ -27,7 +27,7 @@ def restart_program():
 def main():
 
 	grid_dimensions = (11,11)	# Number rows and columns in crossword puzzle grid
-	black_square_density = 0.25	# [Maximum] Fraction of squares that will be black
+	black_square_density = 0.23	# [Maximum] Fraction of squares that will be black
 
 	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
@@ -40,9 +40,10 @@ def main():
 						'./dict_sources/wordnet/index.adj.processed.txt',
 						'./dict_sources/wordnet/index.verb.processed.txt',
 						'./dict_sources/wordnet/index.adv.processed.txt',
-						'./dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
+						'./dict_sources/qxw/UKACD18plus.txt.processed.txt',
+						# './dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
 						# './dict_sources/SCOWL/scowl-2019.10.06/final/american-and-english.processed.txt',
-						'./dict_sources/nyt-crossword-master/clues_fixed.txt'
+						# './dict_sources/nyt-crossword-master/clues_fixed.txt'
 						]
 	main_word_corpus = read_word_corpus(word_corpus_files, grid_dimensions)
 	size_of_corp = sum(len(main_word_corpus[k]) for k in main_word_corpus )
@@ -464,7 +465,7 @@ class CrosswordPuzzle:
 				# Check if any newly filled words are actually words or not
 				if '.' not in temp_word_re:
 					if not word_exists(temp_word_re):
-						print("WARNING: ", temp_word_re, " IS NOT A WORD!")
+						# print("WARNING: ", temp_word_re, " IS NOT A WORD!")
 						return False
 
 				self.across[k].update( {"word_temp": temp_word_re})
@@ -481,7 +482,7 @@ class CrosswordPuzzle:
 				# Check if any newly filled words are actually words or not
 				if '.' not in temp_word_re:
 					if not word_exists(temp_word_re):
-						print("WARNING: ", temp_word_re, " IS NOT A WORD!")
+						# print("WARNING: ", temp_word_re, " IS NOT A WORD!")
 						return False
 
 				self.down[k].update( {"word_temp": temp_word_re})
@@ -504,11 +505,11 @@ class CrosswordPuzzle:
 
 		if count_only:
 			curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp'] and len(set(self.across[k]['word_temp'])) > 1] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp'] and len(set(self.down[k]['word_temp'])) > 1]
-			print("GATHERING LIMITED LIST of length:", len(curr_grid_word_patterns))
+			# print("GATHERING LIMITED LIST of length:", len(curr_grid_word_patterns))
 
 		else:
 			curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp']] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp']]
-			print("GATHERING FULL LIST of length:", len(curr_grid_word_patterns))
+			# print("GATHERING FULL LIST of length:", len(curr_grid_word_patterns))
 
 		curr_grid_word_patterns = list(set(curr_grid_word_patterns))	# Don't repeat for identical word patterns
 		print(curr_grid_word_patterns)
@@ -535,7 +536,7 @@ class CrosswordPuzzle:
 		if count_only:
 			for wp in curr_grid_word_patterns:
 				if len([k for k in all_possible_word_choices_by_len_dict[len(wp)] if re.compile(wp).match(k)]) == 0:
-					print("NO FILL POSSIBLE FOR WORD PATTERN,", wp)
+					# print("NO FILL POSSIBLE FOR WORD PATTERN,", wp)
 					return 0
 			return num_possible_words_to_fill
 
@@ -551,7 +552,7 @@ class CrosswordPuzzle:
 		for wp in all_possible_word_choices_by_pattern_dict.keys():
 			num_choices_for_curr_word = len(all_possible_word_choices_by_pattern_dict[wp])
 			if num_choices_for_curr_word == 0:
-				print("NO FILL POSSIBLE FOR WORD PATTERN,", wp)
+				# print("NO FILL POSSIBLE FOR WORD PATTERN,", wp)
 				most_restricted_word_to_fill = wp
 				break
 			elif num_choices_for_curr_word < minimum_num_possible_fills:
@@ -584,7 +585,7 @@ class CrosswordPuzzle:
 			self.filled_grid = copy.deepcopy(self.grid)
 			return self.filled_grid
 
-		if penalty_count == 10:
+		if penalty_count == 20:
 			print("\nPENALTY LMIT REACHED: Re-attempting fill process from scratch...\n")
 			self.grid = copy.deepcopy(self.empty_grid)
 			self.initialize_across_and_down_word_spaces()
@@ -695,6 +696,26 @@ class CrosswordPuzzle:
 	def generate_hints(self):
 		for key in self.across:
 			word = self.across[key]['word_temp']
+
+			try:
+				synonym_list = wn.synsets(word)
+				worddef = synonym_list[0].definition()
+				if len(worddef) > 1:
+					self.across[key]['clue'] = str(worddef)
+				continue
+			except Exception:
+				pass
+
+			# if wn.synsets(word) != []:# Then try NLTK to find if there are synonyms
+			# 	synonym_list = wn.synsets(word)
+			# 	worddef = synonym_list[0].definition()
+            #
+			# 	for idx in range(0,len(synonym_list)):
+			# 		synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
+			# 	self.across[key]['clue'] = ",".join(set(synonym_list))
+			# 	continue
+
+			# If NLTK doesn't work, try Merriam Webster API
 			url = "https://dictionaryapi.com/api/v3/references/ithesaurus/json/" + word + "?key=a0c37a49-8082-4e6e-984e-1a1275ba3c03"
 			response = json.loads(requests.get(url).text)
 
@@ -717,18 +738,22 @@ class CrosswordPuzzle:
 			if self.across[key]['clue'] != None:
 				continue
 
-			if wn.synsets(word) != []:# Then try NLTK to find if there are synonyms
-				synonym_list = wn.synsets(word)
-				for idx in range(0,len(synonym_list)):
-					synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
-				self.across[key]['clue'] = ",".join(set(synonym_list))
-				continue
-
 			else:
-				self.across[key]['clue'] = "Mystery"
+				self.across[key]['clue'] = "[Mystery Clue!]"
 
 		for key in self.down:
 			word = self.down[key]['word_temp']
+
+			try:
+				synonym_list = wn.synsets(word)
+				worddef = synonym_list[0].definition()
+				if len(worddef) > 1:
+					self.down[key]['clue'] = str(worddef)
+				continue
+			except Exception:
+				pass
+
+			# If NLTK doesn't work, try Merriam Webster API
 			url = "https://dictionaryapi.com/api/v3/references/ithesaurus/json/" + word + "?key=a0c37a49-8082-4e6e-984e-1a1275ba3c03"
 			response = json.loads(requests.get(url).text)
 			if response and isinstance(response[0],dict): # If it can be found in the Merriam Webster Dictionary, we use the definition
@@ -749,16 +774,15 @@ class CrosswordPuzzle:
 			if self.down[key]['clue'] != None:
 				continue
 
-			if wn.synsets(word) != []:# Then try NLTK to find if there are synonyms
-				synonym_list = wn.synsets(word)
-				for idx in range(0,len(synonym_list)):
-					synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
-				self.down[key]['clue'] = ",".join(set(synonym_list))
-				continue
+			# if wn.synsets(word) != []:# Then try NLTK to find if there are synonyms
+			# 	synonym_list = wn.synsets(word)
+			# 	for idx in range(0,len(synonym_list)):
+			# 		synonym_list[idx] = str(synonym_list[idx]).split('(')[1].split(".")[0][1:]
+			# 	self.down[key]['clue'] = ",".join(set(synonym_list))
+			# 	continue
 
 			else:
-				self.down[key]['clue'] = "Mystery"
-
+				self.down[key]['clue'] = "[Mystery Clue!]"
 
 		return
 
@@ -786,13 +810,10 @@ class CrosswordPuzzle:
 			dic["starty"] = self.down[key]["start"][0]+1
 			res.append(dic)
 
-
 		json_str = json.dumps(res, indent=4)
 		with open('data.json','w') as f:
 			f.write(json_str)
 		return
-
-
 
 
 
