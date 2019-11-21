@@ -7,184 +7,200 @@
 		var puzzleData = 
 		[
     {
-        "clue": "WINSOR _____",
-        "answer": "MCCAY",
+        "clue": "_____S",
+        "answer": "SONO",
         "position": 1,
         "orientation": "across",
         "startx": 1,
         "starty": 1
     },
     {
-        "clue": "3-HO-_____",
-        "answer": "PCP",
-        "position": 6,
+        "clue": "Mystery",
+        "answer": "UNBAG",
+        "position": 5,
         "orientation": "across",
-        "startx": 8,
+        "startx": 7,
         "starty": 1
     },
     {
-        "clue": "Mystery",
-        "answer": "CROMES",
-        "position": 9,
+        "clue": "RUSSIAN _____'",
+        "answer": "AVOS",
+        "position": 10,
         "orientation": "across",
         "startx": 1,
         "starty": 2
     },
     {
-        "clue": "___ ibn Abi Talib (Arabic: \u0639\u064e\u0644\u0650\u064a\u0651 \u0671\u0628\u0652\u0646 \u0623\u064e\u0628\u0650\u064a \u0637\u064e\u0627\u0644\u0650\u0628\u200e, \u02bfAl\u012by ibn \u02beAb\u012b \u1e6c\u0101lib; 13 September 601 \u2013 29 January 661) was the cousin and son-in-law of Muhammad, the last prophet of Islam",
-        "answer": "ALI",
+        "clue": "a monotonous sound like that of an insect in motion ",
+        "answer": "THRUM",
         "position": 11,
         "orientation": "across",
-        "startx": 8,
+        "startx": 7,
         "starty": 2
     },
     {
         "clue": "Mystery",
-        "answer": "DEMONWAYANS",
+        "answer": "NONASPIRINS",
         "position": 12,
         "orientation": "across",
         "startx": 1,
         "starty": 3
     },
     {
-        "clue": "_____ISM",
-        "answer": "OMN",
+        "clue": "SUN-_____",
+        "answer": "RYPE",
         "position": 15,
         "orientation": "across",
-        "startx": 2,
+        "startx": 3,
         "starty": 4
     },
     {
-        "clue": "_____IA",
-        "answer": "SLOVAK",
+        "clue": "DRIES VAN _____",
+        "answer": "AGT",
         "position": 16,
         "orientation": "across",
-        "startx": 6,
+        "startx": 8,
         "starty": 4
     },
     {
-        "clue": "_____ (DRINK)",
-        "answer": "POG",
+        "clue": "JOHN _____",
+        "answer": "DOE",
         "position": 17,
         "orientation": "across",
-        "startx": 2,
+        "startx": 1,
         "starty": 5
     },
     {
-        "clue": "___ is a genus of roughly 860 species of flowering plants in the family ___ceae",
-        "answer": "ERICA",
-        "position": 18,
-        "orientation": "across",
-        "startx": 7,
-        "starty": 5
-    },
-    {
-        "clue": "_____ JAE-HYUN",
-        "answer": "AHN",
+        "clue": "_____ TECHNICA",
+        "answer": "ARS",
         "position": 19,
+        "orientation": "across",
+        "startx": 5,
+        "starty": 5
+    },
+    {
+        "clue": "something that one hopes or intends to accomplish ",
+        "answer": "AIM",
+        "position": 21,
+        "orientation": "across",
+        "startx": 9,
+        "starty": 5
+    },
+    {
+        "clue": "_____ CORP.",
+        "answer": "UGS",
+        "position": 23,
         "orientation": "across",
         "startx": 1,
         "starty": 6
     },
     {
-        "clue": "Mystery",
-        "answer": "EEW",
-        "position": 20,
+        "clue": "ENT\u00c4S _____, NISKAVUORI?",
+        "answer": "NYT",
+        "position": 24,
         "orientation": "across",
         "startx": 5,
         "starty": 6
     },
     {
-        "clue": "_____\u2013CAUGHT MERGER",
-        "answer": "COT",
-        "position": 22,
+        "clue": "___ Corporation (\u65e5\u672c\u96fb\u6c17\u682a\u5f0f\u4f1a\u793e, Nippon Denki Kabushiki-gaisha) is a Japanese multinational information technology and electronics company, headquartered in Minato, Tokyo, Japan",
+        "answer": "NEC",
+        "position": 25,
         "orientation": "across",
         "startx": 9,
         "starty": 6
     },
     {
-        "clue": "_____E",
-        "answer": "TAMAL",
-        "position": 23,
-        "orientation": "across",
-        "startx": 1,
-        "starty": 7
-    },
-    {
-        "clue": "_____S",
-        "answer": "PUL",
-        "position": 25,
-        "orientation": "across",
-        "startx": 8,
-        "starty": 7
-    },
-    {
-        "clue": "Mystery",
-        "answer": "AGAPAI",
+        "clue": "BRITISH AEROSPACE _____",
+        "answer": "EAP",
         "position": 26,
         "orientation": "across",
         "startx": 1,
-        "starty": 8
+        "starty": 7
     },
     {
-        "clue": "AL-`_____",
-        "answer": "ULA",
+        "clue": "_____LY",
+        "answer": "GEE",
+        "position": 27,
+        "orientation": "across",
+        "startx": 5,
+        "starty": 7
+    },
+    {
+        "clue": "_____ MODEM",
+        "answer": "DSL",
         "position": 28,
         "orientation": "across",
-        "startx": 8,
+        "startx": 9,
+        "starty": 7
+    },
+    {
+        "clue": "___ (, also written lwa  as in Haitian Creole) are the spirits of Haitian Vodou and Louisiana Voodoo",
+        "answer": "LOA",
+        "position": 29,
+        "orientation": "across",
+        "startx": 2,
         "starty": 8
     },
     {
-        "clue": "___ \\rod-uh-muhn-TADE; roh-duh-muhn-TAHD\\ is a mass noun meaning boastful talk or behavior",
-        "answer": "RODOMONTADE",
-        "position": 29,
+        "clue": "al_itihaad_al_islamiya",
+        "answer": "AIAI",
+        "position": 31,
+        "orientation": "across",
+        "startx": 6,
+        "starty": 8
+    },
+    {
+        "clue": "sanderling",
+        "answer": "SANDERLINGS",
+        "position": 33,
         "orientation": "across",
         "startx": 1,
         "starty": 9
     },
     {
         "clue": "Mystery",
-        "answer": "UIE",
-        "position": 32,
+        "answer": "ELSOL",
+        "position": 37,
         "orientation": "across",
-        "startx": 2,
+        "startx": 1,
         "starty": 10
     },
     {
-        "clue": "THE _____S",
-        "answer": "COTTAR",
-        "position": 33,
+        "clue": "_____ LANGUAGE",
+        "answer": "LESE",
+        "position": 38,
         "orientation": "across",
-        "startx": 6,
+        "startx": 8,
         "starty": 10
     },
     {
-        "clue": "A RAM _____ _____",
-        "answer": "SAM",
-        "position": 34,
+        "clue": "Mystery",
+        "answer": "TAEBO",
+        "position": 39,
         "orientation": "across",
-        "startx": 2,
+        "startx": 1,
         "starty": 11
     },
     {
-        "clue": "the act or an instance of not having or being able to find ",
-        "answer": "LOESS",
-        "position": 35,
+        "clue": "_____ (DISAMBIGUATION)",
+        "answer": "SSRI",
+        "position": 40,
         "orientation": "across",
-        "startx": 7,
+        "startx": 8,
         "starty": 11
     },
     {
-        "clue": "_____ONALD'S",
-        "answer": "MCD",
+        "clue": "_____ FRANCISCO",
+        "answer": "SAN",
         "position": 1,
         "orientation": "down",
         "startx": 1,
         "starty": 1
     },
     {
-        "clue": "Mystery",
-        "answer": "CREOPHAGOUS",
+        "clue": "_____ SOUND",
+        "answer": "OVO",
         "position": 2,
         "orientation": "down",
         "startx": 2,
@@ -192,136 +208,152 @@
     },
     {
         "clue": "Mystery",
-        "answer": "COMMONMADIA",
+        "answer": "NONRESPONSE",
         "position": 3,
         "orientation": "down",
         "startx": 3,
         "starty": 1
     },
     {
-        "clue": "in or into the middle of ",
-        "answer": "AMONG",
+        "clue": "Mystery",
+        "answer": "OSAY",
         "position": 4,
         "orientation": "down",
         "startx": 4,
         "starty": 1
     },
     {
-        "clue": "a strong wish for something ",
-        "answer": "YEN",
+        "clue": "_____ ASSET MANAGEMENT",
+        "answer": "UTI",
         "position": 5,
         "orientation": "down",
-        "startx": 5,
+        "startx": 7,
         "starty": 1
     },
     {
-        "clue": "Mystery",
-        "answer": "PAYOR",
+        "clue": "2019 _____ MELLO YELLO DRAG RACING SERIES",
+        "answer": "NHRA",
         "position": 6,
         "orientation": "down",
         "startx": 8,
         "starty": 1
     },
     {
-        "clue": "Mystery",
-        "answer": "CLAVICULATE",
+        "clue": "brigandine",
+        "answer": "BRIGANDINES",
         "position": 7,
         "orientation": "down",
         "startx": 9,
         "starty": 1
     },
     {
-        "clue": "Mystery",
-        "answer": "PINACOLADAS",
+        "clue": "THE _____",
+        "answer": "AUNTIES",
         "position": 8,
         "orientation": "down",
         "startx": 10,
         "starty": 1
     },
     {
-        "clue": "southwest",
-        "answer": "SWS",
-        "position": 10,
-        "orientation": "down",
-        "startx": 6,
-        "starty": 2
-    },
-    {
-        "clue": "Mystery",
-        "answer": "ALEW",
-        "position": 13,
-        "orientation": "down",
-        "startx": 7,
-        "starty": 3
-    },
-    {
-        "clue": "_____S",
-        "answer": "SKAT",
-        "position": 14,
+        "clue": "_____ RACING",
+        "answer": "GMS",
+        "position": 9,
         "orientation": "down",
         "startx": 11,
+        "starty": 1
+    },
+    {
+        "clue": "LAURETTE _____-MCCOOK",
+        "answer": "SPANG",
+        "position": 13,
+        "orientation": "down",
+        "startx": 5,
         "starty": 3
     },
     {
-        "clue": "___ (; Avestan \ud802\udf01\ud802\udf19\ud802\udf00\ud802\udf2d \u0101tar) is the Zoroastrian concept of holy fire, sometimes described in abstract terms as \"burning and unburning fire\" or \"visible and invisible fire\" (Mirza, 1987:389)",
-        "answer": "ATAR",
-        "position": 19,
+        "clue": "Mystery",
+        "answer": "PERYEAR",
+        "position": 14,
+        "orientation": "down",
+        "startx": 6,
+        "starty": 3
+    },
+    {
+        "clue": "having reached the date at which payment is required ",
+        "answer": "DUE",
+        "position": 17,
         "orientation": "down",
         "startx": 1,
-        "starty": 6
+        "starty": 5
     },
     {
-        "clue": "___ (; ___ite: \ud808\udc79\ud808\udd2c\ud808\uddb7\ud808\udc76\ud808\udefe haltamti; Sumerian: \ud808\ude4f\ud808\ude20\ud808\udda0 NIM",
-        "answer": "ELAM",
+        "clue": "CARMENTA _____",
+        "answer": "OGALALA",
+        "position": 18,
+        "orientation": "down",
+        "startx": 2,
+        "starty": 5
+    },
+    {
+        "clue": "BRYAN _____",
+        "answer": "STEIL",
         "position": 20,
         "orientation": "down",
-        "startx": 5,
-        "starty": 6
+        "startx": 7,
+        "starty": 5
     },
     {
-        "clue": "a large hoofed domestic animal that is used for carrying or drawing loads and for riding ",
-        "answer": "E",
-        "position": 21,
+        "clue": "_____ CAFETERIAS",
+        "answer": "MCL",
+        "position": 22,
         "orientation": "down",
-        "startx": 6,
-        "starty": 6
+        "startx": 11,
+        "starty": 5
     },
     {
-        "clue": "Mystery",
-        "answer": "APOEM",
-        "position": 24,
+        "clue": "MAOJINI _____",
+        "answer": "ADOB",
+        "position": 30,
         "orientation": "down",
         "startx": 4,
-        "starty": 7
-    },
-    {
-        "clue": "to arrange something in a certain spot or position ",
-        "answer": "PUTTO",
-        "position": 25,
-        "orientation": "down",
-        "startx": 8,
-        "starty": 7
-    },
-    {
-        "clue": "_____ (DISAMBIGUATION)",
-        "answer": "IOC",
-        "position": 27,
-        "orientation": "down",
-        "startx": 6,
         "starty": 8
     },
     {
-        "clue": "LON _____",
-        "answer": "NOL",
-        "position": 30,
+        "clue": "to trouble the mind of ",
+        "answer": "AILS",
+        "position": 32,
         "orientation": "down",
-        "startx": 7,
+        "startx": 8,
+        "starty": 8
+    },
+    {
+        "clue": "being in a state of fitness for some experience or action ",
+        "answer": "SET",
+        "position": 33,
+        "orientation": "down",
+        "startx": 1,
         "starty": 9
     },
     {
-        "clue": "SAN FRANCISCO 49_____",
-        "answer": "ERS",
-        "position": 31,
+        "clue": "_____ RATING SYSTEM",
+        "answer": "ELO",
+        "position": 34,
+        "orientation": "down",
+        "startx": 5,
+        "starty": 9
+    },
+    {
+        "clue": "galvanic_skin_response",
+        "answer": "GSR",
+        "position": 35,
+        "orientation": "down",
+        "startx": 10,
+        "starty": 9
+    },
+    {
+        "clue": "_____ INVESTMENTS COMPANY",
+        "answer": "SEI",
+        "position": 36,
         "orientation": "down",
         "startx": 11,
         "starty": 9

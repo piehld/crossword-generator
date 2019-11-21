@@ -198,6 +198,10 @@ class CrosswordPuzzle:
 		puzzle = copy.deepcopy(G)
 		row,col = int(next_move/self.cols),next_move % self.rows
 		puzzle[row][col] = '.'
+		if row in (int(self.rows/2)-1,int(self.rows/2)-1) and col == int(self.cols/2):
+			return False
+		if col in (int(self.cols/2)-1,int(self.cols/2)+1) and row == int(self.rows/2):
+			return False
 		return self.check_rule1(puzzle,row,col) and self.check_rule2(puzzle)
 
 	def check_rule1(self,puzzle,row,col):
