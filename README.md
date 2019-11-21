@@ -15,6 +15,7 @@ _____________________________
 
 # Helpful resources/links:
  - https://github.com/jweisbeck/Crossword - Our demo is implementing our data into this framework.
+ - https://zxi.mytechroad.com/blog/data-structure/sp1-union-find-set/ - This contains the source codes about the inplementation of union find in python. We used it directly in our code.
  - https://en.wikipedia.org/wiki/Crossword - This contains some of the important rules for crosswords (note only the American style crossword)
  - https://en.wikipedia.org/wiki/The_New_York_Times_crossword_puzzle
  - https://www.nytimes.com/puzzles/submissions/crossword
