@@ -36,7 +36,8 @@ def main():
 
 	"""
 
-	grid_dimensions = (11,11)	# Number rows and columns in crossword puzzle grid
+	grid_dimensions = (13,13)	# Number of rows and columns in crossword puzzle grid
+								# Currently, must be Odd x Odd (minimum 5x5, maximum 24x24)
 	black_square_density = 0.23	# [Maximum] Fraction of squares that will be black
 
 	XW_Puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)

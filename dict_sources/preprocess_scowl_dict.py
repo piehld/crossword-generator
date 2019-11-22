@@ -8,8 +8,8 @@ Will create a new smaller text file in the same readable format as other diction
 Idea for efficient removal of special characters from here: https://stackoverflow.com/questions/5843518/remove-all-special-characters-punctuation-and-spaces-from-string
 """
 
-dict_in_file_path_prefix = './dict_sources/SCOWL/scowl-2019.10.06/final/'
-out_file_name = './dict_sources/SCOWL/scowl-2019.10.06/final/american-and-english.processed.txt'
+dict_in_file_path_prefix = './SCOWL/scowl-2019.10.06/final/'
+out_file_name = './SCOWL/scowl-2019.10.06/final/american-and-english.processed.txt'
 
 max_word_length = 25	# Don't think we'll be generating any puzzles larger than this
 

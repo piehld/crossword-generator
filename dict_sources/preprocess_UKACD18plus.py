@@ -1,14 +1,14 @@
 import os
 
 """
-Script to pre-process/clean up words from YAWL ("yet another word list") data, filtering out only those that are of a relevant length, no numbers, no underscores, etc.
+Script to pre-process/clean up words from UKACD18+ data, filtering out only those that are of a relevant length, no numbers, no underscores, etc.
 
 Will create a new smaller text file in the same readable format as other dictionary source files used.
 
 Idea for efficient removal of special characters from here: https://stackoverflow.com/questions/5843518/remove-all-special-characters-punctuation-and-spaces-from-string
 """
 
-in_file = './dict_sources/qxw/UKACD18plus.txt'
+in_file = './qxw/UKACD18plus.txt'
 out_file_name = in_file + '.processed.txt'
 
 max_word_length = 25	# Don't think we'll be generating any puzzles larger than this

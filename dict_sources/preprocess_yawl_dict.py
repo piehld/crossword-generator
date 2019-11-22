@@ -8,7 +8,7 @@ Will create a new smaller text file in the same readable format as other diction
 Idea for efficient removal of special characters from here: https://stackoverflow.com/questions/5843518/remove-all-special-characters-punctuation-and-spaces-from-string
 """
 
-in_file = './dict_sources/YAWL/yawl-0.3.2.03/word.list'
+in_file = './YAWL/yawl-0.3.2.03/word.list'
 out_file_name = in_file + '.processed.txt'
 
 max_word_length = 25	# Don't think we'll be generating any puzzles larger than this

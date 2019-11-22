@@ -1,7 +1,7 @@
 import os
 
 """
-Script to pre-process/clean up words from wordnet data, filtering out only those that are of a relevant length, no numbers, no underscores, etc.
+Script to pre-process/clean up words from WordNet data, filtering out only those that are of a relevant length, no numbers, no underscores, etc.
 
 Will create a new smaller text file in the same readable format as other dictionary source files used.
 
@@ -10,7 +10,7 @@ Idea for efficient removal of special characters from here: https://stackoverflo
 
 dict_in_file_list = ['index.adj', 'index.adv', 'index.noun', 'index.verb']
 
-dict_in_file_path_prefix = './dict_sources/wordnet/'
+dict_in_file_path_prefix = './wordnet/'
 
 max_word_length = 25	# Don't think we'll be generating any puzzles larger than this
 
