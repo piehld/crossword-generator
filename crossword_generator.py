@@ -16,19 +16,32 @@ import json
 from nltk.corpus import wordnet as wn
 import wikipedia
 
-def restart_program():
-    print("Re-attempting random blank-grid generation...")
-    python = sys.executable
-    os.execl(python, python, * sys.argv)
 
 def main():
+	"""
+	Main function for generating a crossword puzzle.
+
+	Parameters to specify below: grid_dimensions and black_square_density
+
+	Word corpora used:
+		WordNet noun, adjective, verb, and adverb lists.
+			- Obtained here: https://wordnet.princeton.edu/download/current-version
+			- Citation: Princeton University "About WordNet." WordNet. Princeton University. 2010.
+		UKACD18plus (UK Advanced Cryptics Dictionary)
+			- Obtained here: https://www.quinapalus.com/qxwdownload.html
+		YAWL (Yet Another Word List)
+			- Obtained here: http://freshmeat.sourceforge.net/projects/yawl/
+		SCOWL (Spell Checker Oriented Word Lists)
+			- Obtained here: http://wordlist.aspell.net/
+
+	"""
 
 	grid_dimensions = (11,11)	# Number rows and columns in crossword puzzle grid
 	black_square_density = 0.23	# [Maximum] Fraction of squares that will be black
 
-	xw_puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
+	XW_Puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
-	print(xw_puzzle.empty_grid)
+	print(XW_Puzzle.empty_grid)
 
 	global main_word_corpus
 	word_corpus_files = [
@@ -37,26 +50,25 @@ def main():
 						'./dict_sources/wordnet/index.verb.processed.txt',
 						'./dict_sources/wordnet/index.adv.processed.txt',
 						'./dict_sources/qxw/UKACD18plus.txt.processed.txt',
-						# './dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
+						'./dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
 						# './dict_sources/SCOWL/scowl-2019.10.06/final/american-and-english.processed.txt',
-						# './dict_sources/nyt-crossword-master/clues_fixed.txt'
 						]
-	main_word_corpus = read_word_corpus(word_corpus_files, grid_dimensions)
-	size_of_corp = sum(len(main_word_corpus[k]) for k in main_word_corpus )
+	main_word_corpus = read_word_corpus(word_corpus_files)
+	size_of_corp = sum(len(main_word_corpus[k]) for k in main_word_corpus)
 	print("Size of word corpus being used:", size_of_corp)
 
 	# main_word_corpus = sort_word_dic(main_word_corpus) # Optional: Sort main_word_corpus by its length of the hints
 
 	# Fill grid using recursive function:
-	xw_puzzle.filled_grid =	xw_puzzle.fill_grid_recursively(None, 0)
+	XW_Puzzle.filled_grid =	XW_Puzzle.fill_grid_recursively(main_word_corpus, 0)
 	print("DONE FILLING GRID!\nGenerating clues...")
-	xw_puzzle.generate_hints()
+	XW_Puzzle.generate_hints()
 	print("\nAcross:")
-	pprint.pprint(xw_puzzle.across)
+	pprint.pprint(XW_Puzzle.across)
 	print("\nDown:")
-	pprint.pprint(xw_puzzle.down)
-	xw_puzzle.write_to_json()
-	print("\nDONE! Puzzle, clues, and answers written to 'data.json' file. Enjoy!")
+	pprint.pprint(XW_Puzzle.down)
+	XW_Puzzle.write_to_json()
+	print("\nDONE! Puzzle, clues, and answers written to 'data.json' and './website/Crossword-master/js/script.js' files.\nTo play, open './website/Crossword-master/index.html' with your favorite internet browser. Enjoy!")
 
 	return
 
@@ -65,35 +77,39 @@ class CrosswordPuzzle:
 	"""
 	Crossword Puzzle class for representing a full (unfilled or filled) crossword puzzle grid.
 
-	Currently must be Odd x Odd length
-
-	Rules followed:
-		- All words must be >= 3 characters
-		- All white spaces should be connected (no enclosed/blocked-off regions)
+	Rules followed in grid generation:
+		1) All words must be >= 3 characters
+		2) All white spaces should be connected (i.e., no enclosed/blocked-off regions)
 			* Using union-find algorithm to check this
-		- All white squares must be part of BOTH an Across and Down crossing
-			* There must be at least 1 white square to the left or right, AND at least 1 white sqauare to the top or bottom
-		- There should be at least one black square in each row and each column
+		3) All white squares must be part of BOTH an Across AND Down crossing
+			(i.e., there must be at least 1 white square to the left or right,
+					AND at least 1 white square to the top or bottom.)
+		4) Currently, must be Odd x Odd size (grid-generation restriction)
+
+	- Also, for generating an easier case, option to ensure there is at least one black square in each row and each column
+		(i.e., don't leave words that span the full grid length)
 	"""
 
-	def __init__(self, dims: tuple, density: float):
+	def __init__(self, dimensions: tuple, density: float):
 		"""
 		Initialize the crossword puzzle grid.
 
-		:param dims:	Specified grid dimensions as a tuple (rows, columns).
+		:param dimensions:	Specified grid dimensions as a tuple (rows, columns).
+							Currently, must be Odd x Odd size.
 		:param density:	Fraction of grid to set as black squares, as a float.
+
 		:return self:	CrosswordPuzzle object.
 
 		"""
 
-		self.dims = dims
-		self.rows = dims[0]
-		self.cols = dims[1]
-		self.ifcenter_black = False # Patrick: I add a new parameter to determine if the center is black
+		self.dims = dimensions
+		self.rows = dimensions[0]
+		self.cols = dimensions[1]
+		self.ifcenter_black = False # Parameter to determine if the center is black
 		self.density = density	# Should add a check to make sure the density is low enough that a "valid puzzle" is still possible (i.e., that no two-letter words are present, etc.)
-		self.num_squares = dims[0]*dims[1]
+		self.num_squares = dimensions[0]*dimensions[1]
 		self.num_blk_sqs = round(self.num_squares * self.density) # If odd, center square must be made black; if even, no need.
-		if self.num_blk_sqs % 2 != 0: # [FOR TESTING PURPOSES] If odd number of black squares, make it even so puzzle can easily be made symmetrical (wihtout having to make center square black)
+		if self.num_blk_sqs % 2 != 0: # If odd number of black squares, make it even so puzzle can easily be made symmetrical (wihtout having to make center square black)
 			self.num_blk_sqs -= 1
 			self.ifcenter_black = True
 
@@ -110,19 +126,15 @@ class CrosswordPuzzle:
 		self.initialize_across_and_down_word_spaces()
 		self.grid = copy.deepcopy(self.empty_grid)
 
-		# self.fill_grid()
-
 
 	def make_empty_grid(self):
 		"""
 		Method to generate a random empty grid, with symmetrical black and white squares, and numbering.
 
 		Randomly choose black_squares, and make sure it obeys three rules above
-
-		For testing purposes, will start with simple 5x5 grid with four corners set as black squares.
 		"""
 
-		G = np.empty(self.dims, dtype=str)	# Note: MUST use 'empty' (cannot use 'ndarray' or 'array'; the former will not be mutable (for some reason???) and the latter will be 1D); Also, if you use "np.string_" this actually makes it an array of "bytes"...?!
+		G = np.empty(self.dims, dtype=str)
 		G[:] = '_'	# Set all initialized cells to '_' so that columns line up on stdout (i.e., instead of setting them to empty '')
 
 		center = int(self.rows/2)
@@ -131,7 +143,7 @@ class CrosswordPuzzle:
 			self.blk_sqs_positions.append((center, center))
 
 		rand_nums,rand_pool = int(self.num_blk_sqs / 2), [i for i in range(0,int((self.num_squares - 1) / 2))]
-		#G,rand_nums = self.fill_at_least_one(G,rand_nums)
+		# G, rand_nums = self.fill_at_least_one(G, rand_nums)	# OPTIONAL: Comment this in to try placing at least one black square in each row and column (to generate an easier puzzle to fill)
 		while(rand_nums > 0):
 			rand_nums -= 1
 			temp = choice(rand_pool)
@@ -152,10 +164,13 @@ class CrosswordPuzzle:
 		return
 
 
-	def fill_at_least_one(self,G,rand_nums):
-		'''
-		To obey rule 4, we fisrt generalize one black square in each row and each column
-		'''
+	def fill_at_least_one(self, G, rand_nums):
+		"""
+		Optional function.
+		To generate an easier puzzle to fill, try placing at least one black square in each row and column.
+		(Prevents having any words that will span the entire length of the grid.)
+		"""
+
 		col_list = [i for i in range(0,self.cols)]
 		pool = [i for i in range(0,self.cols)]
 		center = int(self.rows/2)
@@ -188,13 +203,14 @@ class CrosswordPuzzle:
 
 
 
-	def check_valid(self,G,next_move):
-		'''
-		check if a puzzle is valid when generating black squares
+	def check_valid(self, G, next_move):
+		"""
+		Method to check if a puzzle grid is valid when generating the grid
+		pattern and inserting black squares.
 
 		Check to make sure the density is low enough that a "valid puzzle" is still possible (i.e., that no two-letter words are present, etc.),
 		depending on the number of black squares requested to be put into the grid.
-		'''
+		"""
 		puzzle = copy.deepcopy(G)
 		row,col = int(next_move/self.cols),next_move % self.rows
 		puzzle[row][col] = '.'
@@ -205,9 +221,9 @@ class CrosswordPuzzle:
 		return self.check_rule1(puzzle,row,col) and self.check_rule2(puzzle)
 
 	def check_rule1(self,puzzle,row,col):
-		'''
-		check if all words are no less than 3 letters
-		'''
+		"""
+		Method to check if all words are at least 3 letters or longer.
+		"""
 		cur_length = 0
 		for c in range(0,self.cols): # check if current row obeys the first rule
 			if puzzle[row][c] == "_":
@@ -233,10 +249,11 @@ class CrosswordPuzzle:
 		return True
 
 	def check_rule2(self,puzzle):
-		'''
-		check if all white grids are connected
-		use union find
-		'''
+		"""
+		Method to check if all white grids are connected
+
+		This method makes use of the imported 'union_find' script.
+		"""
 		n = self.rows * self.cols
 		s = UnionFindSet(n)
 		### Everytime union your right and your down
@@ -267,9 +284,8 @@ class CrosswordPuzzle:
 		"""
 		Method to gather the collection of blank across & down spaces, into which the words will be filled.
 
-		# First get list of all across and down empty cell stretches (with length)
-			# Will likely need sub method to update this list once letters start getting put in the grid, to re-run each time a new letter is inserted.
-
+		Each across and down attribute will be a dictionary of the clue number, start and end positions of the word,
+		length of the word, and the temporary word fill as a regex string.
 		"""
 
 		self.across, self.down = {}, {}
@@ -352,6 +368,13 @@ class CrosswordPuzzle:
 
 	def fill_word(self, word_id_to_fill, word_to_fill_grid_with, direction):
 		"""
+		Method to fill a stretch of blank grid spaces with a word.
+
+		:param word_id_to_fill:	Word ID/clue number of grid to fill.
+		:param word_to_fill_grid_with:	Word to fill into stretch of grid spaces.
+		:param direction:	Direction of word placement in grid ('across' or 'down').
+
+		:return bool:	True if word can be filled without any creating any non-words; else, False.
 		"""
 
 		word_coords = []
@@ -394,6 +417,7 @@ class CrosswordPuzzle:
 
 	def remove_last_added_word(self):
 		"""
+		Method to remove the most recently added word (in order of self.list_of_word_coordinates_filled).
 		"""
 		word_id_to_remove = self.list_of_word_coordinates_filled[-1][0]
 		direction = self.list_of_word_coordinates_filled[-1][1]
@@ -414,11 +438,9 @@ class CrosswordPuzzle:
 
 	def update_across_and_down_with_partial_grid(self, direction_of_words_to_update):
 		"""
-		# updated across and down dicts with partial words to check possible validity
-
-		Purpose of this function is to gather the current partial (or completed) list of words in the grid,
-		to subsequently check each partially filled word for its potential to be a real word or not, as well
-		as if a word which was filled indirectly is a real word or not.
+		Method to gather and update the across and down dictionaries with the current set of partially (or
+		completely) filled words in the puzzle grid, as well as to check if any words which were filled
+		indirectly are real words or not.
 		"""
 
 		if direction_of_words_to_update == 'across':	# specifying which part of the grid needs updating will save time from iterating over all words that didn't get changed
@@ -455,16 +477,31 @@ class CrosswordPuzzle:
 		return True
 
 
-	def gather_all_possible_words(self, word_dict, count_only: bool):
+	def gather_all_possible_words(self, word_dict: dict, count_only: bool):
 		"""
-		NEW Method to gather the number of possible words that can be filled into the current state of the grid,
-		based on the partial fill of the grid so far.
+		Method to gather the number of possible words that can be filled into the current state of the grid,
+		based on the partial fill of the grid so far. Returns an updated (and smaller) dictionary of words
+		that may be selected as possible fills in the next grid-fill iteration.
 
-		# Regex compile idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
+		To improve program runtime when cycling through a set of words to identify which fill would provide the
+		highest number of possible words in the next grid-fill iteration (i.e., when 'count_only' is True), only
+		partially-filled words are checked (i.e., words with at least 1 letter in it, but are not already filled).
 
-		# TO ADD: Maybe don't run this if > 10000 possibilities
-		# OR BETTER: In list creation below, only gather the words with a partial letter in it, (i.e., ignore all-blank words...)
-				# OR: Only run it once for the all-blank words, and keep that dictionary so that it doesn't need to be recreated upon each iteration...?
+		Efficient regex compile & search idea from: https://stackoverflow.com/questions/38460918/regex-matching-a-dictionary-efficiently-in-python
+
+		:param word_dict:	Word corpus dictionary with word lengths as keys and a nested dictionary of words:clues as values.
+		:param count_only:	Boolean flag indicating if the function should only return the count of word possibilities or the
+							newly updated dictionary of possible words.
+
+		:return all_possible_word_choices_by_len_dict:	Updated word corpus dictionary containing all the possible words that can be filled into
+														the current state of the grid. Organized by the word length as keys, and nested dictionary
+														of words:clues as values.
+		:return all_possible_word_choices_by_pattern_dict:	Word dictionary containing all the same words as 'all_possible_word_choices_by_len_dict',
+															but organized by word regex pattern as the keys rather than word length.
+		:return most_restricted_word_to_fill:	Word pattern of the current grid state that has the fewest number of possible words to fill with.
+
+		:return num_possible_words_to_fill: Number of possible words that can be filled in for the current state of the grid (only accounts for words
+											that are already partially-filled). Returned only if 'count_only' is True.
 
 		"""
 
@@ -488,7 +525,6 @@ class CrosswordPuzzle:
 		for wlen in curr_grid_word_regex_compiled_dict.keys():
 			w_choices = [wi for wi in word_dict[wlen] if any ( regex_match(wi) for regex_match in curr_grid_word_regex_compiled_dict[wlen] )]
 			all_possible_word_choices_by_len_dict.update( {wlen : w_choices} )
-			# print("Number possible words of length,",wlen,"=", len(w_choices))
 			num_possible_words_to_fill += len(w_choices)
 
 		print("Total number of possible word choices so far:", num_possible_words_to_fill)
@@ -506,7 +542,7 @@ class CrosswordPuzzle:
 				curr_word_choices = [k for k in all_possible_word_choices_by_len_dict[wp_len] if re.compile(wp).match(k)]
 				all_possible_word_choices_by_pattern_dict.update({wp:curr_word_choices})
 
-		minimum_num_possible_fills = 100000 # arbitrarily chosen number of possible fills, to compare number possibilities for each partial word of the puzzle
+		minimum_num_possible_fills = 1000000 # Arbitrarily chosen high number for comparing number of possibilities of each partial word in the current puzzle state.
 		most_restricted_word_to_fill = None # initialize variable
 		for wp in all_possible_word_choices_by_pattern_dict.keys():
 			num_choices_for_curr_word = len(all_possible_word_choices_by_pattern_dict[wp])
@@ -523,27 +559,35 @@ class CrosswordPuzzle:
 
 
 
-	def fill_grid_recursively(self, possible_word_dict, penalty_count):
+	def fill_grid_recursively(self, possible_word_dict: dict, penalty_count: int):
 		"""
-		Recursive method to fill the grid.
+		Recursive method to fill the grid with words.
 
-		Fill LONGER words first, then crossings to the longer words
-		ALSO Choose most common words first (or rank them all)
+		Strategy works by filling in longest word(s) first, then the most limited/restricted words next (i.e., those with the
+		fewest word possibilities for filling). At each iteration, a set of words are randomly picked from the word corpus
+		dictionary (the number to pick is specified by 'sample_size'), and an attempt to fill each word is performed, at each
+		point of which the number of possible words in the resulting grid state is recorded. The word from the pool that results
+		in the MOST number of possible words AFTER being filled into the grid is the one chosen to actually fill into the grid.
 
-		Use self.grid as grid state.
-		At each iteration, provide the next most-demanding word_id_to_fill to next function call,
-							as well as the reduced dictionary from which the next word may be chosen.
+		The new state of the puzzle grid is then sent back into this function to fill the next word. If a point is reached in
+		which no fill is posssible or some other conflict occurs, a 'penalty' point is added and the grid reverts back one or
+		more words (can be adjusted by copying the 'self.remove_last_added_word()' call multiple times in a row). Once a certain
+		max number of penalties has occurred (specified by 'penalty_limit'), then the grid-filling process starts over from scratch.
 
-		:param word_dict: Word corpus (in dict. format) to use to fill grid.
+		:param possible_word_dict:	Word corpus dictionary to use to for filling grid.
+		:param penalty_count:	Number of penalties that have occurred at the current stage of the grid-filling process.
 
 		"""
 		global main_word_corpus
+
+		sample_size = 30
+		penalty_limit = 10
 
 		if not '_' in self.grid:
 			self.filled_grid = copy.deepcopy(self.grid)
 			return self.filled_grid
 
-		if penalty_count == 20:
+		if penalty_count == penalty_limit:
 			print("\nPENALTY LMIT REACHED: Re-attempting fill process from scratch...\n")
 			self.grid = copy.deepcopy(self.empty_grid)
 			self.initialize_across_and_down_word_spaces()
@@ -573,7 +617,7 @@ class CrosswordPuzzle:
 
 
 			# reset max of k each time so not repeating the same word (and try to turn off replacement)
-			wds = choices(possible_word_dict_by_pattern[most_limited_word], k=20)	# choose 100 at a time!!!! then do for loop down below...
+			wds = choices(possible_word_dict_by_pattern[most_limited_word], k = sample_size)	# choose 100 at a time!!!! then do for loop down below...
 			wds = set(list(wds)) # Only check unique words
 			print(wds)
 			if len(wds) == 0:
@@ -627,9 +671,20 @@ class CrosswordPuzzle:
 			self.remove_last_added_word()
 			return self.fill_grid_recursively(main_word_corpus, penalty_count)
 
+
 	def generate_hints(self):
+		"""
+		Method to generate clues for all words of the completed crossword puzzle.
+
+		Makes use of the NLTK WordNet Python module, Merriam-Webster API, and Wikipedia Python API library,
+		to try to find a corresponding clue for each word.
+
+		If still no clues are able to be found, then the unkown word is assigned the hint, "[Mystery Clue!]."
+
+		"""
 		for key in self.across:
 			word = self.across[key]['word_temp']
+			self.across[key]['answer'] = word
 
 			try:
 				synonym_list = wn.synsets(word)	# Then try NLTK to find if there are synonyms
@@ -648,6 +703,7 @@ class CrosswordPuzzle:
 				self.across[key]['clue'] = response[0]['def'][0]['sseq'][0][0][1]['dt'][0][1]
 				continue
 
+			# If Merriam Webster doesn't work, try Wikipedia
 			if wikipedia.search(word) != []:
 				if word == wikipedia.search(word)[0].upper():# If it can be used as search keyword
 					try:
@@ -667,6 +723,7 @@ class CrosswordPuzzle:
 
 		for key in self.down:
 			word = self.down[key]['word_temp']
+			self.down[key]['answer'] = word
 
 			try:
 				synonym_list = wn.synsets(word)	# Then try NLTK to find if there are synonyms
@@ -683,6 +740,8 @@ class CrosswordPuzzle:
 			if response and isinstance(response[0],dict): # If it can be found in the Merriam Webster Dictionary, we use the definition
 				self.down[key]['clue'] = response[0]['def'][0]['sseq'][0][0][1]['dt'][0][1]
 				continue
+
+			# If Merriam Webster doesn't work, try Wikipedia
 			if wikipedia.search(word) != []:
 				if word == wikipedia.search(word)[0].upper():# If it can be used as search keyword
 					try:
@@ -709,7 +768,7 @@ class CrosswordPuzzle:
 		for key in self.across.keys():
 			dic = {}
 			dic["clue"] = self.across[key]["clue"]
-			dic["answer"] = self.across[key]["word_temp"]
+			dic["answer"] = self.across[key]["answer"]
 			dic["position"] = key
 			dic["orientation"] = "across"
 			dic["startx"] = self.across[key]["start"][1]+1
@@ -719,7 +778,7 @@ class CrosswordPuzzle:
 		for key in self.down.keys():
 			dic = {}
 			dic["clue"] = self.down[key]["clue"]
-			dic["answer"] = self.down[key]["word_temp"]
+			dic["answer"] = self.down[key]["answer"]
 			dic["position"] = key
 			dic["orientation"] = "down"
 			dic["startx"] = self.down[key]["start"][1]+1
@@ -729,6 +788,11 @@ class CrosswordPuzzle:
 		json_str = json.dumps(res, indent=4)
 		with open('data.json','w') as f:
 			f.write(json_str)
+
+		with open('./website/Crossword-master/js/script.js', 'w') as o:
+			o.write("""// A javascript-enhanced crossword puzzle [c] Jesse Weisbeck, MIT/GPL\n(function($) {\n        $(function() {\n                // provide crossword entries in an array of objects like the following example\n                // Position refers to the numerical order of an entry. Each position can have\n                // two entries: an across entry and a down entry\n                var puzzleData =\n                """)
+			o.write(json_str)
+			o.write("""\n\t\t$('#puzzle-wrapper').crossword(puzzleData);\n\t})\n})(jQuery)\n""")
 		return
 
 
@@ -745,7 +809,7 @@ def word_exists(word_to_check):
 		return False
 
 
-def read_word_corpus(file_list, dims):
+def read_word_corpus(file_list):
 	"""
 	Function to read in the provided dictionary word corpus.
 
@@ -774,17 +838,32 @@ def read_word_corpus(file_list, dims):
 	return clue_answer_dict
 
 
-def sort_word_dic(word):
-	'''
-	Sort the dictionary by its length of hints
-	'''
-	for wordlength in word.keys():
-		pairs= sorted(word[wordlength].items(),key = lambda item: len(item[1]),reverse = True)
+def sort_word_dic(word_dict):
+	"""
+	Sort the dictionary by its length of hints.
+
+	Optional function to run on word corpus to sort words by the number of clues available for the word.
+	In a way, this can provide a ranking system of most commonly used words for crosswords if you want to
+	add those words first (with the assumption that these words will provide easier fills.)
+
+	This is only useful if you are reading in a word corpus obtained from a clue-answer dump of many
+	different crossword puzzles (e.g., if you were to save the output word list over hundreds of iterations
+	of puzzle generation), since such a data dump would likely have a set of words that are listed multiple times.
+	"""
+
+	for wordlength in word_dict.keys():
+		pairs= sorted(word_dict[wordlength].items(),key = lambda item: len(item[1]),reverse = True)
 		new_dic = {}
 		for pair in pairs:
 			new_dic[pair[0]] = pair[1]
-		word[wordlength] = copy.deepcopy(new_dic)
-	return word
+		word_dict[wordlength] = copy.deepcopy(new_dic)
+	return word_dict
+
+
+def restart_program():
+	print("Re-attempting random blank-grid generation...")
+	python = sys.executable
+	os.execl(python, python, * sys.argv)
 
 
 if __name__ == "__main__":
