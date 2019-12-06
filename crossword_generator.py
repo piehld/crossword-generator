@@ -21,7 +21,13 @@ def main():
 	"""
 	Main function for generating a crossword puzzle.
 
-	Parameters to specify below: grid_dimensions and black_square_density
+	PARAMETERS TO SPECITY BELOW:
+		grid_dimensions:	  	Size of crossword puzzle grid (rows, columns). Must(?) be Odd x Odd (min. 5x5, max. 24x24)
+		black_square_density:	Proportion of grid squares to make black. Be aware that too high of density may cause the program to
+								freeze, due to it being unable to generate a legal grid (e.g., if it would result in a 2-letter word)
+		word_sample_size:		Number of words to sample from the word corpus for each iteration of the filling process
+		penalty_limit:			Number of times program is allowed to reach a dead end before restarting from a clean slate
+
 
 	Word corpora used:
 		WordNet noun, adjective, verb, and adverb lists.
@@ -29,36 +35,45 @@ def main():
 			- Citation: Princeton University "About WordNet." WordNet. Princeton University. 2010.
 		UKACD18plus (UK Advanced Cryptics Dictionary)
 			- Obtained here: https://www.quinapalus.com/qxwdownload.html
+		TWL06 (Tournament Word List)
+			- Obtained here: https://www.wordgamedictionary.com/word-lists/
+		Western English word list
+			- Also obtained here: https://www.wordgamedictionary.com/word-lists/
 		YAWL (Yet Another Word List)
 			- Obtained here: http://freshmeat.sourceforge.net/projects/yawl/
 		SCOWL (Spell Checker Oriented Word Lists)
 			- Obtained here: http://wordlist.aspell.net/
 
 	"""
+	global main_word_corpus
+	global word_sample_size
+	global penalty_limit
 
-	grid_dimensions = (13,13)	# Number of rows and columns in crossword puzzle grid
-								# Currently, must be Odd x Odd (minimum 5x5, maximum 24x24)
-	black_square_density = 0.23	# [Maximum] Fraction of squares that will be black
+	grid_dimensions = (7,7)		# Size of crossword puzzle grid (rows, columns). Must(?) be Odd x Odd (min. 5x5, max. 24x24)
+	black_square_density = 0.19	# Proportion of grid squares to make black. Be aware that too high of density may cause program to freeze, due to it being unable to generate a legal grid (e.g., if it would result in a 2-letter word)
+	word_sample_size = 30	# Number of words to sample from the word corpus for each iteration of the filling process
+	penalty_limit = 10		# Number of times program is allowed to reach a dead end before restarting from a clean slate
 
 	XW_Puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
 
 	print(XW_Puzzle.empty_grid)
 
-	global main_word_corpus
 	word_corpus_files = [
 						'./dict_sources/wordnet/index.noun.processed.txt',
 						'./dict_sources/wordnet/index.adj.processed.txt',
 						'./dict_sources/wordnet/index.verb.processed.txt',
 						'./dict_sources/wordnet/index.adv.processed.txt',
 						'./dict_sources/qxw/UKACD18plus.txt.processed.txt',
-						'./dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
+						'./dict_sources/TWL/english.txt.processed.txt',
+						'./dict_sources/TWL/twl06.txt.processed.txt',
+						# './dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
 						# './dict_sources/SCOWL/scowl-2019.10.06/final/american-and-english.processed.txt',
 						]
 	main_word_corpus = read_word_corpus(word_corpus_files)
 	size_of_corp = sum(len(main_word_corpus[k]) for k in main_word_corpus)
 	print("Size of word corpus being used:", size_of_corp)
 
-	# main_word_corpus = sort_word_dic(main_word_corpus) # Optional: Sort main_word_corpus by its length of the hints
+	# main_word_corpus = sort_word_dic(main_word_corpus) # Optional: Sort main_word_corpus by its length of the hints (Not relevant yet--see notes in sorting function below)
 
 	# Fill grid using recursive function:
 	XW_Puzzle.filled_grid =	XW_Puzzle.fill_grid_recursively(main_word_corpus, 0)
@@ -566,7 +581,7 @@ class CrosswordPuzzle:
 
 		Strategy works by filling in longest word(s) first, then the most limited/restricted words next (i.e., those with the
 		fewest word possibilities for filling). At each iteration, a set of words are randomly picked from the word corpus
-		dictionary (the number to pick is specified by 'sample_size'), and an attempt to fill each word is performed, at each
+		dictionary (the number to pick is specified by 'word_sample_size'), and an attempt to fill each word is performed, at each
 		point of which the number of possible words in the resulting grid state is recorded. The word from the pool that results
 		in the MOST number of possible words AFTER being filled into the grid is the one chosen to actually fill into the grid.
 
@@ -580,9 +595,8 @@ class CrosswordPuzzle:
 
 		"""
 		global main_word_corpus
-
-		sample_size = 30
-		penalty_limit = 10
+		global word_sample_size
+		global penalty_limit
 
 		if not '_' in self.grid:
 			self.filled_grid = copy.deepcopy(self.grid)
@@ -608,7 +622,7 @@ class CrosswordPuzzle:
 			word_id_num_to_fill = choice(most_limited_word_ids)
 
 			# If choosing first word or two, choose the longest in the puzzle
-			if len(self.list_of_word_coordinates_filled) < 1:
+			if len(self.list_of_word_coordinates_filled) < 2:
 				max_word_length = max(self.across[k]['len'] for k in self.across.keys())
 				print(max_word_length)
 				most_limited_word_ids = [k for k in self.across.keys() if self.across[k]['len'] == max_word_length and '.' in self.across[k]['word_temp']]
@@ -617,8 +631,9 @@ class CrosswordPuzzle:
 				most_limited_word = self.across[word_id_num_to_fill]['word_temp']
 
 
-			# reset max of k each time so not repeating the same word (and try to turn off replacement)
-			wds = choices(possible_word_dict_by_pattern[most_limited_word], k = sample_size)	# choose 100 at a time!!!! then do for loop down below...
+			# TO ADD: Need to keep track of which words have been attempted for each particular step of the fill, to
+			# 		  prevent entering a repetitive loop where the same sequence of words are attempted over and over.
+			wds = choices(possible_word_dict_by_pattern[most_limited_word], k = word_sample_size)
 			wds = set(list(wds)) # Only check unique words
 			print(wds)
 			if len(wds) == 0:
@@ -628,16 +643,11 @@ class CrosswordPuzzle:
 				self.remove_last_added_word()
 				return self.fill_grid_recursively(main_word_corpus, penalty_count)
 
-			print("Most limited word pattern to fill:", most_limited_word, "at", word_id_num_to_fill, word_dir) # "  Filling with  ---->  ", w)
+			print("Most limited word pattern to fill:", most_limited_word, "at", word_id_num_to_fill, word_dir)
 
 			most_flexible_word = None
 			most_possible_new_words_allowed = 0
 			for w in wds:
-				if len(self.list_of_word_coordinates_filled) == 0:
-					# If choosing first word, likely won't affect the number of next possible words since there will still be another
-					#  fully-blank row or column of cells. So for now, just pick one at random to speed things up.
-					most_flexible_word = w
-					break
 				if self.fill_word(word_id_num_to_fill, w, word_dir):
 					# Get number of possible words
 					number_possible_new_words = self.gather_all_possible_words(possible_word_dict_by_len, count_only = True)
