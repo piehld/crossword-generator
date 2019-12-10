@@ -669,7 +669,7 @@ class CrosswordPuzzle:
 			print(wds)
 
 			if len(wds) == 0:
-				print("Removing last 3 words and trying again...\n")
+				print("Removing last [one-few] words and trying again...\n")
 				penalty_count += 1
 				## Remove last three words and keep track of dead end word
 				# self.track_dead_ends()
@@ -703,7 +703,7 @@ class CrosswordPuzzle:
 				self.fill_word(word_id_num_to_fill, most_flexible_word, word_dir)
 			except Exception as err:
 				print("\nEXCEPTION:", err)
-				print("Removing last 3 words and trying again...\n")
+				print("Removing last [one-few] words and trying again...\n")
 				penalty_count += 1
 				## Remove last three words and keep track of dead end word
 				# self.track_dead_ends()
@@ -721,7 +721,7 @@ class CrosswordPuzzle:
 
 		except Exception as err:
 			print("\nEXCEPTION:", err)
-			print("Removing last 3 words and trying again...\n")
+			print("Removing last [one-few] words and trying again...\n")
 			penalty_count += 1
 			## Remove last three words and keep track of dead end word
 			# self.track_dead_ends()
