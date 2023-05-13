@@ -15,6 +15,7 @@ import requests
 import json
 from nltk.corpus import wordnet as wn
 import wikipedia
+import csv
 
 
 def main():
@@ -53,25 +54,35 @@ def main():
 	black_square_density = 0.18	# Proportion of grid squares to make black. Be aware that too high of density may cause program to freeze, due to it being unable to generate a legal grid (e.g., if it would result in a 2-letter word)
 	word_sample_size = 30	# Number of words to sample from the word corpus for each iteration of the filling process
 	penalty_limit = 10		# Number of times program is allowed to reach a dead end before restarting from a clean slate
-	input_grid = []
-	input_grid = [
-		['.', '_', '_', '_', '_'],
-		['_', '_', '_', '_', '_'],
-		['_', '_', '_', '_', '_'],
-		['_', '_', '_', '_', '_'],
-		['_', '_', '_', '_', '.'],
-	]
+	input_grid, input_grid_file = [], None
+	# input_grid_file = "../crossword-notes/xword_design_1pt1.tsv"
+	if input_grid_file:
+		with open(input_grid_file, 'r') as f:
+			csv_reader = csv.reader(f, delimiter='\t')
+			input_grid_list = list(csv_reader)
+			# replace blank squares with "_"
+			for r in input_grid_list:
+				input_grid.append(['_' if c == '' else c for c in r])
+
+	# input_grid = [
+	# 	['.', '_', '_', '_', '_'],
+	# 	['_', '_', '_', '_', '_'],
+	# 	['_', '_', '_', '_', '_'],
+	# 	['_', '_', '_', '_', '_'],
+	# 	['_', '_', '_', '_', '.'],
+	# ]
 	XW_Puzzle = CrosswordPuzzle(grid_dimensions, black_square_density, input_grid)
 
 	print(XW_Puzzle.empty_grid)
 
 	word_corpus_files = [
+						#
 						'./dict_sources/wordnet/index.noun.processed.txt',
 						'./dict_sources/wordnet/index.adj.processed.txt',
 						'./dict_sources/wordnet/index.verb.processed.txt',
 						'./dict_sources/wordnet/index.adv.processed.txt',
-						'./dict_sources/TWL/english.txt.processed.txt',
-						'./dict_sources/TWL/twl06.txt.processed.txt',
+						# './dict_sources/TWL/english.txt.processed.txt',
+						# './dict_sources/TWL/twl06.txt.processed.txt',
 						# './dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
 						# './dict_sources/qxw/UKACD18plus.txt.processed.txt',
 						# './dict_sources/SCOWL/american-and-english.processed.txt',
@@ -158,6 +169,7 @@ class CrosswordPuzzle:
 
 		self.grid = copy.deepcopy(self.empty_grid)
 		self.initialize_across_and_down_word_spaces()
+		print("Puzzle density:", self.density)
 
 
 	def convert_input_grid(self):
@@ -588,7 +600,7 @@ class CrosswordPuzzle:
 			curr_grid_word_patterns = [self.across[k]['word_temp'] for k in self.across.keys() if '.' in self.across[k]['word_temp']] + [self.down[k]['word_temp'] for k in self.down.keys() if '.' in self.down[k]['word_temp']]
 
 		curr_grid_word_patterns = list(set(curr_grid_word_patterns))	# Don't repeat for identical word patterns
-		print(curr_grid_word_patterns)
+		# print(curr_grid_word_patterns)
 
 		curr_grid_word_regex_compiled_dict = {}
 		for wp in curr_grid_word_patterns:
@@ -617,7 +629,10 @@ class CrosswordPuzzle:
 			for wp in curr_grid_word_patterns:
 				wp_len = len(wp)
 				curr_word_choices = [k for k in all_possible_word_choices_by_len_dict[wp_len] if re.compile(wp).match(k)]
-				all_possible_word_choices_by_pattern_dict.update({wp:curr_word_choices})
+				if len(curr_word_choices) >= 0:
+					all_possible_word_choices_by_pattern_dict.update({wp:curr_word_choices})
+				else:
+					print('WARNING! Zero matches for pattern', wp)
 
 		minimum_num_possible_fills = 100000000 # Arbitrarily chosen high number for comparing number of possibilities of each partial word in the current puzzle state.
 		most_restricted_word_pattern_to_fill = None # initialize variable
@@ -678,7 +693,8 @@ class CrosswordPuzzle:
 
 		# Now do the actual filling part
 		try:
-			possible_word_dict_by_len, possible_word_dict_by_pattern, most_limited_word_pattern = self.gather_all_possible_words(main_word_corpus, count_only = False)
+			poss_words_flag = True
+			possible_word_dict_by_len, possible_word_dict_by_pattern, most_limited_word_pattern = self.gather_all_possible_words(main_word_corpus, count_only=False)
 			most_limited_word_ids = [k for k in self.across.keys() if self.across[k]['word_temp'] == most_limited_word_pattern]
 			if len(most_limited_word_ids) == 0:
 				most_limited_word_ids = [k for k in self.down.keys() if self.down[k]['word_temp'] == most_limited_word_pattern]
@@ -688,9 +704,14 @@ class CrosswordPuzzle:
 
 			word_id_num_to_fill = choice(most_limited_word_ids)
 
-			# If choosing first word or two, choose the longest in the puzzle
-			if len(self.list_of_word_coordinates_filled) < 2:
-				max_word_length = max(self.across[k]['len'] for k in self.across.keys())
+			for pattern, word_list in possible_word_dict_by_pattern.items():
+				if len(word_list) == 0:
+					print("WARNING: pattern has zero possibilities:", pattern, len(word_list))
+					poss_words_flag = False
+
+			# If choosing first word or two, choose the longest in the puzzle and not starting with an input grid
+			if poss_words_flag and len(self.list_of_word_coordinates_filled) < 2:
+				max_word_length = max(self.across[k]['len'] for k in self.across.keys() if "." in self.across[k]['word_temp'])
 				print(max_word_length)
 				most_limited_word_ids = [k for k in self.across.keys() if self.across[k]['len'] == max_word_length and '.' in self.across[k]['word_temp']]
 				word_dir = 'across'
@@ -700,19 +721,25 @@ class CrosswordPuzzle:
 
 			# TO ADD: Need to keep track of which words have been attempted for each particular step of the fill, to
 			# 		  prevent entering a repetitive loop where the same sequence of words are attempted over and over.
-			wds = choices(possible_word_dict_by_pattern[most_limited_word_pattern], k = word_sample_size)
+			print("Most limited word pattern:", most_limited_word_pattern)
+			# print("sample size, length of options", word_sample_size, len(possible_word_dict_by_pattern[most_limited_word_pattern]))
+			#
+			# if poss_words_flag:
+			wds = choices(possible_word_dict_by_pattern[most_limited_word_pattern], k=min(word_sample_size, len(possible_word_dict_by_pattern[most_limited_word_pattern])))
 			wds = list(set(wds)) # Only check unique words
+			# else:
+				# wds = []
 			print(wds)
 
 			## Make sure to remove those words found to lead to dead ends
 			## TO UPDATE: Maybe once the "distance" between word A fill and word X fill is >2, then restore word X "dead end words", since will likely no longer be put in same situation again...but need to think about how to implement this more...
-			if (word_id_num_to_fill, word_dir) in self.dead_end_word_dict.keys():
+			if wds and (word_id_num_to_fill, word_dir) in self.dead_end_word_dict.keys():
 				dead_words = self.dead_end_word_dict[(word_id_num_to_fill, word_dir)]
 				if len(dead_words) > 0:
 					for dead_word in dead_words:
 						if dead_word in wds:
 							wds.remove(dead_word)
-			print(wds)
+			# print(wds)
 
 			if len(wds) == 0:
 				print("Removing last [one-few] words and trying again...\n")
@@ -736,7 +763,7 @@ class CrosswordPuzzle:
 			for w in wds:
 				if self.fill_word(word_id_num_to_fill, w, word_dir):
 					# Get number of possible words
-					number_possible_new_words = self.gather_all_possible_words(possible_word_dict_by_len, count_only = True)
+					number_possible_new_words = self.gather_all_possible_words(possible_word_dict_by_len, count_only=True)
 					if number_possible_new_words >= most_possible_new_words_allowed:
 						most_flexible_word = w
 						most_possible_new_words_allowed = number_possible_new_words
@@ -746,9 +773,11 @@ class CrosswordPuzzle:
 
 			try:
 				print("  Filling with  ---->  ", most_flexible_word)
+				print("point2.A")
 				self.fill_word(word_id_num_to_fill, most_flexible_word, word_dir)
+				print("point2.B")
 			except Exception as err:
-				print("\nEXCEPTION:", err)
+				print("\nEXCEPTION 1:", err)
 				print("Removing last [one-few] words and trying again...\n")
 				penalty_count += 1
 				## Remove last three words and keep track of dead end word
@@ -766,7 +795,7 @@ class CrosswordPuzzle:
 			return self.fill_grid_recursively(main_word_corpus, penalty_count)
 
 		except Exception as err:
-			print("\nEXCEPTION:", err)
+			print("\nEXCEPTION 2:", err)
 			print("Removing last [one-few] words and trying again...\n")
 			penalty_count += 1
 			## Remove last three words and keep track of dead end word

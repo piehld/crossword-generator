@@ -1,82 +1,130 @@
 [
     {
-        "clue": "\"Four kings, maybe\"",
-        "answer": "MELD",
+        "clue": "\"\"\"S.O.S.\"\" band\"",
+        "answer": "ABBA",
         "position": 1,
         "orientation": "across",
-        "startx": 2,
+        "startx": 1,
         "starty": 1
     },
     {
-        "clue": "Yes or no follower",
-        "answer": "SIREE",
+        "clue": "Handy places to shop",
+        "answer": "MARTS",
         "position": 5,
         "orientation": "across",
         "startx": 1,
         "starty": 2
     },
     {
-        "clue": "How ham may be served in a sandwich",
-        "answer": "ONRYE",
-        "position": 6,
+        "clue": "Nursery rhyme opening",
+        "answer": "BAABAA",
+        "position": 7,
         "orientation": "across",
         "startx": 1,
         "starty": 3
     },
     {
-        "clue": "Butchers' offerings",
-        "answer": "MEATS",
-        "position": 7,
+        "clue": "Gun",
+        "answer": "REV",
+        "position": 9,
         "orientation": "across",
         "startx": 1,
         "starty": 4
     },
     {
-        "clue": "African fox",
-        "answer": "ASSE",
-        "position": 8,
+        "clue": "Backwoods address abbr.",
+        "answer": "RFD",
+        "position": 10,
         "orientation": "across",
-        "startx": 1,
+        "startx": 5,
+        "starty": 4
+    },
+    {
+        "clue": "Tobacco plug",
+        "answer": "DOTTLE",
+        "position": 12,
+        "orientation": "across",
+        "startx": 2,
         "starty": 5
     },
     {
-        "clue": "Pits",
-        "answer": "MINES",
+        "clue": "Not slipping as much",
+        "answer": "SURER",
+        "position": 14,
+        "orientation": "across",
+        "startx": 3,
+        "starty": 6
+    },
+    {
+        "clue": "Affix a brand to",
+        "answer": "SEAR",
+        "position": 15,
+        "orientation": "across",
+        "startx": 4,
+        "starty": 7
+    },
+    {
+        "clue": "Writer Bierce",
+        "answer": "AMBR",
         "position": 1,
+        "orientation": "down",
+        "startx": 1,
+        "starty": 1
+    },
+    {
+        "clue": "Cried out on a farm",
+        "answer": "BAAED",
+        "position": 2,
         "orientation": "down",
         "startx": 2,
         "starty": 1
     },
     {
-        "clue": "Odd jobs",
-        "answer": "ERRAS",
-        "position": 2,
+        "clue": "Curtain call chorus",
+        "answer": "BRAVOS",
+        "position": 3,
         "orientation": "down",
         "startx": 3,
         "starty": 1
     },
     {
-        "clue": "1944 battle site",
-        "answer": "LEYTE",
-        "position": 3,
+        "clue": "Up",
+        "answer": "ATB",
+        "position": 4,
         "orientation": "down",
         "startx": 4,
         "starty": 1
     },
     {
-        "clue": "Ruby and Sandra",
-        "answer": "DEES",
-        "position": 4,
+        "clue": "\"\"\"The Words\"\" autobiographer\"",
+        "answer": "SARTRE",
+        "position": 6,
         "orientation": "down",
         "startx": 5,
-        "starty": 1
+        "starty": 2
     },
     {
-        "clue": "Body of an organism",
-        "answer": "SOMA",
-        "position": 5,
+        "clue": "\"\"\"___ in Her Ear\"\" (classic Georges Feydeau farce)\"",
+        "answer": "AFLEA",
+        "position": 8,
         "orientation": "down",
-        "startx": 1,
-        "starty": 2
+        "startx": 6,
+        "starty": 3
+    },
+    {
+        "clue": "Charlie Chan creator Earl ___ Biggers",
+        "answer": "DERR",
+        "position": 11,
+        "orientation": "down",
+        "startx": 7,
+        "starty": 4
+    },
+    {
+        "clue": "Overseer of schools: Abbr.",
+        "answer": "TUS",
+        "position": 13,
+        "orientation": "down",
+        "startx": 4,
+        "starty": 5
     }
 ]
