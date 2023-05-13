@@ -49,12 +49,19 @@ def main():
 	global word_sample_size
 	global penalty_limit
 
-	grid_dimensions = (9,9)		# Size of crossword puzzle grid (rows, columns). Must(?) be Odd x Odd (min. 5x5, max. 24x24)
+	grid_dimensions = (7,7)		# Size of crossword puzzle grid (rows, columns). Must(?) be Odd x Odd (min. 5x5, max. 24x24)
 	black_square_density = 0.18	# Proportion of grid squares to make black. Be aware that too high of density may cause program to freeze, due to it being unable to generate a legal grid (e.g., if it would result in a 2-letter word)
 	word_sample_size = 30	# Number of words to sample from the word corpus for each iteration of the filling process
 	penalty_limit = 10		# Number of times program is allowed to reach a dead end before restarting from a clean slate
-
-	XW_Puzzle = CrosswordPuzzle(grid_dimensions, black_square_density)
+	input_grid = []
+	input_grid = [
+		['.', '_', '_', '_', '_'],
+		['_', '_', '_', '_', '_'],
+		['_', '_', '_', '_', '_'],
+		['_', '_', '_', '_', '_'],
+		['_', '_', '_', '_', '.'],
+	]
+	XW_Puzzle = CrosswordPuzzle(grid_dimensions, black_square_density, input_grid)
 
 	print(XW_Puzzle.empty_grid)
 
@@ -63,14 +70,16 @@ def main():
 						'./dict_sources/wordnet/index.adj.processed.txt',
 						'./dict_sources/wordnet/index.verb.processed.txt',
 						'./dict_sources/wordnet/index.adv.processed.txt',
-						# './dict_sources/qxw/UKACD18plus.txt.processed.txt',
 						'./dict_sources/TWL/english.txt.processed.txt',
 						'./dict_sources/TWL/twl06.txt.processed.txt',
-						'./dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
-						# './dict_sources/SCOWL/scowl-2019.10.06/final/american-and-english.processed.txt',
+						# './dict_sources/YAWL/yawl-0.3.2.03/word.list.processed.txt',
+						# './dict_sources/qxw/UKACD18plus.txt.processed.txt',
+						# './dict_sources/SCOWL/american-and-english.processed.txt',
 						# './dict_sources/IMDB/name.basics.tsv.processed.txt'
 						]
 	main_word_corpus = read_word_corpus(word_corpus_files)
+	# print(main_word_corpus)
+	# exit()
 	size_of_corp = sum(len(main_word_corpus[k]) for k in main_word_corpus)
 	print("Size of word corpus being used:", size_of_corp)
 
@@ -79,7 +88,7 @@ def main():
 	# Fill grid using recursive function:
 	XW_Puzzle.filled_grid =	XW_Puzzle.fill_grid_recursively(main_word_corpus, 0)
 	print("DONE FILLING GRID!\nGenerating clues...")
-	XW_Puzzle.generate_hints()
+	XW_Puzzle.generate_hints(main_word_corpus)
 	print("\nAcross:")
 	pprint.pprint(XW_Puzzle.across)
 	print("\nDown:")
@@ -107,7 +116,7 @@ class CrosswordPuzzle:
 		(i.e., don't leave words that span the full grid length)
 	"""
 
-	def __init__(self, dimensions: tuple, density: float):
+	def __init__(self, dimensions: tuple, density: float, input_grid: list):
 		"""
 		Initialize the crossword puzzle grid.
 
@@ -118,7 +127,7 @@ class CrosswordPuzzle:
 		:return self:	CrosswordPuzzle object.
 
 		"""
-
+		self.input_grid = input_grid
 		self.dims = dimensions
 		self.rows = dimensions[0]
 		self.cols = dimensions[1]
@@ -142,10 +151,31 @@ class CrosswordPuzzle:
 										# happen without this due to the nature of how this program is choosing the "best" word to fill with (i.e., the one that gives the highest number of 'next-word' possibilities),
 										# as if there are fewer actual word options than the specified 'word_sample_size', then the same highest-possiblity providing word will continue to be picked).
 
-		self.make_empty_grid()
-		self.initialize_across_and_down_word_spaces()
-		self.grid = copy.deepcopy(self.empty_grid)
+		if self.input_grid:
+			self.convert_input_grid()
+		else:
+			self.make_empty_grid()
 
+		self.grid = copy.deepcopy(self.empty_grid)
+		self.initialize_across_and_down_word_spaces()
+
+
+	def convert_input_grid(self):
+		G = np.array(self.input_grid)
+		self.empty_grid = copy.deepcopy(G)
+		self.rows = len(self.input_grid)
+		self.cols = len(self.input_grid[0])
+		self.dims = (self.rows, self.cols)
+		self.num_squares = self.rows*self.cols
+		self.num_blk_sqs = 0
+		self.blk_sqs_positions = []
+		for i in range(0, self.rows):
+			for j in range(0, self.cols):
+				if self.empty_grid[i][j] == ".":
+					self.blk_sqs_positions.append((i, j))
+					self.num_blk_sqs += 1
+		self.density = self.num_blk_sqs / self.num_squares
+		return
 
 	def make_empty_grid(self):
 		"""
@@ -363,16 +393,28 @@ class CrosswordPuzzle:
 
 		# Get length of each word and append to both the word dict itself
 		for k in self.across.keys():
-			wlength = self.across[k]["end"][1] - ( self.across[k]["start"][1] - 1 )
+			arow = self.across[k]["start"][0]
+			acol = self.across[k]["start"][1]
+			acol_end = self.across[k]["end"][1]
+			wlength = acol_end - ( acol - 1 )
 			self.across[k]["len"] = wlength
-			self.across[k]['word_temp'] = '.' * wlength
+			if self.input_grid:
+				self.across[k]['word_temp'] = ''.join([l for l in self.grid[arow, acol:acol_end+1] if l != '.']).replace('_','.')
+			else:
+				self.across[k]['word_temp'] = '.' * wlength
 			self.across[k]['clue'] = None
 			self.across[k]['answer'] = None
 
 		for k in self.down.keys():
-			wlength = self.down[k]["end"][0] - ( self.down[k]["start"][0] - 1 )
+			drow = self.down[k]["start"][0]
+			drow_end = self.down[k]["end"][0]
+			dcol = self.down[k]["start"][1]
+			wlength = drow_end - ( drow - 1 )
 			self.down[k]["len"] = wlength
-			self.down[k]['word_temp'] = '.' * wlength
+			if self.input_grid:
+				self.down[k]['word_temp'] = ''.join([l for l in self.grid[drow:drow_end+1, dcol] if l != '.']).replace('_','.')
+			else:
+				self.down[k]['word_temp'] = '.' * wlength
 			self.down[k]['clue'] = None
 			self.down[k]['answer'] = None
 
@@ -483,7 +525,7 @@ class CrosswordPuzzle:
 				row = self.across[k]['start'][0]
 				c1 = self.across[k]['start'][1]
 				c2 = self.across[k]['end'][1] + 1
-				temp_word = np.str.join('',self.grid[row][c1:c2])
+				temp_word = str.join('',self.grid[row][c1:c2])
 				temp_word_re = temp_word.replace('_','.')
 
 				# Check if any newly filled words are actually words or not
@@ -499,7 +541,7 @@ class CrosswordPuzzle:
 				col = self.down[k]['start'][1]
 				r1 = self.down[k]['start'][0]
 				r2 = self.down[k]['end'][0] + 1
-				temp_word = np.str.join('',self.grid[r1:r2,col])
+				temp_word = str.join('',self.grid[r1:r2,col])
 				temp_word_re = temp_word.replace('_','.')
 
 				# Check if any newly filled words are actually words or not
@@ -618,6 +660,10 @@ class CrosswordPuzzle:
 		global penalty_limit
 
 		print(self.grid)
+		# for k,v in self.across.items():
+		# 	print(k,v)
+		# for k,v in self.down.items():
+		# 	print(k,v)
 
 		if not '_' in self.grid:
 			self.filled_grid = copy.deepcopy(self.grid)
@@ -737,7 +783,7 @@ class CrosswordPuzzle:
 			return self.fill_grid_recursively(main_word_corpus, penalty_count)
 
 
-	def generate_hints(self):
+	def generate_hints(self, main_word_corpus_dict):
 		"""
 		Method to generate clues for all words of the completed crossword puzzle.
 
@@ -747,9 +793,21 @@ class CrosswordPuzzle:
 		If still no clues are able to be found, then the unkown word is assigned the hint, "[Mystery Clue!]."
 
 		"""
+		answer_to_clue_list_dict = {}
+		for sizeD in main_word_corpus_dict.values():
+			for k,v in sizeD.items():
+				answer_to_clue_list_dict[k]=[c for c in v if c != "[Blank clue]"]
+
 		for key in self.across:
 			word = self.across[key]['word_temp']
 			self.across[key]['answer'] = word
+
+			if word in answer_to_clue_list_dict:
+				if len(answer_to_clue_list_dict[word]) > 0:
+					word_clue = choice(answer_to_clue_list_dict[word])
+					if len(word_clue) > 1:
+						self.across[key]['clue'] = str(word_clue)
+						continue
 
 			try:
 				synonym_list = wn.synsets(word)	# Then try NLTK to find if there are synonyms
@@ -789,6 +847,13 @@ class CrosswordPuzzle:
 		for key in self.down:
 			word = self.down[key]['word_temp']
 			self.down[key]['answer'] = word
+
+			if word in answer_to_clue_list_dict:
+				if len(answer_to_clue_list_dict[word]) > 0:
+					word_clue = choice(answer_to_clue_list_dict[word])
+					if len(word_clue) > 1:
+						self.down[key]['clue'] = str(word_clue)
+						continue
 
 			try:
 				synonym_list = wn.synsets(word)	# Then try NLTK to find if there are synonyms
