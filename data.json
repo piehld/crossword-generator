@@ -1,82 +1,82 @@
 [
     {
-        "clue": "Chuck",
-        "answer": "TOSS",
+        "clue": "Abbr. on top of some e-mails",
+        "answer": "BCC",
         "position": 1,
         "orientation": "across",
         "startx": 2,
         "starty": 1
     },
     {
-        "clue": "the central research and development organization for the United States Department of Defense; responsible for developing new surveillance technologies since 9/11",
-        "answer": "DARPA",
-        "position": 5,
+        "clue": "Dish eaten with rice",
+        "answer": "CURRY",
+        "position": 4,
         "orientation": "across",
         "startx": 1,
         "starty": 2
     },
     {
-        "clue": "Mr. Spock portrayer",
-        "answer": "NIMOY",
+        "clue": "\"\"\"That's nonsense!\"\"\"",
+        "answer": "MYEYE",
         "position": 6,
         "orientation": "across",
         "startx": 1,
         "starty": 3
     },
     {
-        "clue": "Asian palm",
-        "answer": "ARECA",
+        "clue": "Brown shade",
+        "answer": "SEPIA",
         "position": 7,
         "orientation": "across",
         "startx": 1,
         "starty": 4
     },
     {
-        "clue": "Cutty ___",
-        "answer": "SARK",
+        "clue": "Cartoon dog",
+        "answer": "REN",
         "position": 8,
         "orientation": "across",
-        "startx": 1,
+        "startx": 2,
         "starty": 5
     },
     {
-        "clue": "long-tailed arboreal mustelid of Central America and South America",
-        "answer": "TAIRA",
+        "clue": "\"Word before \"\"beware!\"\"\"",
+        "answer": "BUYER",
         "position": 1,
         "orientation": "down",
         "startx": 2,
         "starty": 1
     },
     {
-        "clue": "an abalone found near the Channel Islands",
-        "answer": "ORMER",
+        "clue": "Kind of paper",
+        "answer": "CREPE",
         "position": 2,
         "orientation": "down",
         "startx": 3,
         "starty": 1
     },
     {
-        "clue": "\"\"\"Baby and Child Care\"\" author\"",
-        "answer": "SPOCK",
+        "clue": "1993 Aerosmith hit",
+        "answer": "CRYIN",
         "position": 3,
         "orientation": "down",
         "startx": 4,
         "starty": 1
     },
     {
-        "clue": "___ prayer",
-        "answer": "SAYA",
+        "clue": "Ruler amts.",
+        "answer": "CMS",
         "position": 4,
         "orientation": "down",
-        "startx": 5,
-        "starty": 1
+        "startx": 1,
+        "starty": 2
     },
     {
-        "clue": "Genetic strands",
-        "answer": "DNAS",
+        "clue": "Thumbs-up vote",
+        "answer": "YEA",
         "position": 5,
         "orientation": "down",
-        "startx": 1,
+        "startx": 5,
         "starty": 2
     }
 ]
