@@ -7,132 +7,84 @@
                 var puzzleData =
                 [
     {
-        "clue": "\"\"\"S.O.S.\"\" band\"",
-        "answer": "ABBA",
+        "clue": "Chuck",
+        "answer": "TOSS",
         "position": 1,
         "orientation": "across",
-        "startx": 1,
+        "startx": 2,
         "starty": 1
     },
     {
-        "clue": "Handy places to shop",
-        "answer": "MARTS",
+        "clue": "the central research and development organization for the United States Department of Defense; responsible for developing new surveillance technologies since 9/11",
+        "answer": "DARPA",
         "position": 5,
         "orientation": "across",
         "startx": 1,
         "starty": 2
     },
     {
-        "clue": "Nursery rhyme opening",
-        "answer": "BAABAA",
+        "clue": "Mr. Spock portrayer",
+        "answer": "NIMOY",
+        "position": 6,
+        "orientation": "across",
+        "startx": 1,
+        "starty": 3
+    },
+    {
+        "clue": "Asian palm",
+        "answer": "ARECA",
         "position": 7,
         "orientation": "across",
         "startx": 1,
-        "starty": 3
+        "starty": 4
     },
     {
-        "clue": "Gun",
-        "answer": "REV",
-        "position": 9,
+        "clue": "Cutty ___",
+        "answer": "SARK",
+        "position": 8,
         "orientation": "across",
         "startx": 1,
-        "starty": 4
-    },
-    {
-        "clue": "Backwoods address abbr.",
-        "answer": "RFD",
-        "position": 10,
-        "orientation": "across",
-        "startx": 5,
-        "starty": 4
-    },
-    {
-        "clue": "Tobacco plug",
-        "answer": "DOTTLE",
-        "position": 12,
-        "orientation": "across",
-        "startx": 2,
         "starty": 5
     },
     {
-        "clue": "Not slipping as much",
-        "answer": "SURER",
-        "position": 14,
-        "orientation": "across",
-        "startx": 3,
-        "starty": 6
-    },
-    {
-        "clue": "Affix a brand to",
-        "answer": "SEAR",
-        "position": 15,
-        "orientation": "across",
-        "startx": 4,
-        "starty": 7
-    },
-    {
-        "clue": "Writer Bierce",
-        "answer": "AMBR",
+        "clue": "long-tailed arboreal mustelid of Central America and South America",
+        "answer": "TAIRA",
         "position": 1,
         "orientation": "down",
-        "startx": 1,
-        "starty": 1
-    },
-    {
-        "clue": "Cried out on a farm",
-        "answer": "BAAED",
-        "position": 2,
-        "orientation": "down",
         "startx": 2,
         "starty": 1
     },
     {
-        "clue": "Curtain call chorus",
-        "answer": "BRAVOS",
-        "position": 3,
+        "clue": "an abalone found near the Channel Islands",
+        "answer": "ORMER",
+        "position": 2,
         "orientation": "down",
         "startx": 3,
         "starty": 1
     },
     {
-        "clue": "Up",
-        "answer": "ATB",
-        "position": 4,
+        "clue": "\"\"\"Baby and Child Care\"\" author\"",
+        "answer": "SPOCK",
+        "position": 3,
         "orientation": "down",
         "startx": 4,
         "starty": 1
     },
     {
-        "clue": "\"\"\"The Words\"\" autobiographer\"",
-        "answer": "SARTRE",
-        "position": 6,
+        "clue": "___ prayer",
+        "answer": "SAYA",
+        "position": 4,
         "orientation": "down",
         "startx": 5,
+        "starty": 1
+    },
+    {
+        "clue": "Genetic strands",
+        "answer": "DNAS",
+        "position": 5,
+        "orientation": "down",
+        "startx": 1,
         "starty": 2
-    },
-    {
-        "clue": "\"\"\"___ in Her Ear\"\" (classic Georges Feydeau farce)\"",
-        "answer": "AFLEA",
-        "position": 8,
-        "orientation": "down",
-        "startx": 6,
-        "starty": 3
-    },
-    {
-        "clue": "Charlie Chan creator Earl ___ Biggers",
-        "answer": "DERR",
-        "position": 11,
-        "orientation": "down",
-        "startx": 7,
-        "starty": 4
-    },
-    {
-        "clue": "Overseer of schools: Abbr.",
-        "answer": "TUS",
-        "position": 13,
-        "orientation": "down",
-        "startx": 4,
-        "starty": 5
     }
 ]
 		$('#puzzle-wrapper').crossword(puzzleData);
